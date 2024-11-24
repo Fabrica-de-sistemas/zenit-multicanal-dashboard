@@ -1,0 +1,29 @@
+// src/routes/authRoutes.ts
+import { Router, Request, Response } from 'express';
+import { authController } from '../controllers/authController';
+import { AuthRequest } from '../middleware/authMiddleware';
+
+const router = Router();
+
+// Handlers tipados
+const handleRegister = async (req: Request, res: Response) => {
+  console.log('Rota /register acessada');
+  await authController.register(req, res);
+};
+
+const handleLogin = async (req: Request, res: Response) => {
+  console.log('Rota /login acessada');
+  await authController.login(req, res);
+};
+
+const handleProfile = async (req: AuthRequest, res: Response) => {
+  console.log('Rota /profile acessada');
+  await authController.getProfile(req, res);
+};
+
+// Rotas
+router.post('/register', handleRegister);
+router.post('/login', handleLogin);
+router.get('/profile', handleProfile as any);
+
+export default router;
