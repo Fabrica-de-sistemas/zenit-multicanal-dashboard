@@ -1,7 +1,8 @@
 // components/dashboard/TicketList.tsx
 import { Ticket } from '@/types/chat';
 import { Instagram, Twitter, Facebook, MessageCircle, MessageSquare } from 'lucide-react';
-import { formatPhoneNumber } from '@/utils/formatters';
+import { formatPhoneNumber, formatElapsedTime } from '@/utils/formatters';
+import { useEffect, useState } from 'react';
 
 interface TicketListProps {
     tickets: Ticket[];
@@ -14,6 +15,39 @@ export const TicketList: React.FC<TicketListProps> = ({
     selectedTicketId,
     onSelectTicket
 }) => {
+    // Estado para forçar atualizações
+    const [, setUpdate] = useState(0);
+    // Efeito para atualizar o componente a cada minuto
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setUpdate(prev => prev + 1);
+        }, 60000);
+
+        return () => clearInterval(timer);
+    }, []);
+
+    // Função para calcular o tempo decorrido
+    const getElapsedTime = (timestamp: string): string => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+
+        const minutes = Math.floor(diff / 60000); // Convertendo para minutos
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (days > 0) {
+            return `há ${days} ${days === 1 ? 'dia' : 'dias'}`;
+        }
+        if (hours > 0) {
+            return `há ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+        }
+        if (minutes > 0) {
+            return `há ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+        }
+        return 'agora mesmo';
+    };
+
     const getChannelIcon = (platform: string) => {
         switch (platform) {
             case 'instagram':
@@ -34,37 +68,21 @@ export const TicketList: React.FC<TicketListProps> = ({
     // Função para obter o identificador principal do ticket
     const getTicketIdentifier = (ticket: Ticket): string => {
         if (!ticket.messages.length) return 'Sem mensagens';
-        
+
         const firstMessage = ticket.messages[0];
         switch (firstMessage.platform) {
-          case 'whatsapp':
-            return formatPhoneNumber(firstMessage.sender.username);
-          case 'instagram':
-          case 'twitter':
-            return `@${firstMessage.sender.username}`;
-          case 'facebook':
-            return firstMessage.sender.name;
-          case 'site':
-            return firstMessage.sender.name;
-          default:
-            return firstMessage.sender.username;
+            case 'whatsapp':
+                return formatPhoneNumber(firstMessage.sender.username);
+            case 'instagram':
+            case 'twitter':
+                return `@${firstMessage.sender.username}`;
+            case 'facebook':
+                return firstMessage.sender.name;
+            case 'site':
+                return firstMessage.sender.name;
+            default:
+                return firstMessage.sender.username;
         }
-      };
-
-    // Função para calcular o tempo decorrido
-    const getElapsedTime = (timestamp: string): string => {
-        const messageDate = new Date(timestamp);
-        const now = new Date();
-        const diff = now.getTime() - messageDate.getTime();
-
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-
-        if (days > 0) return `${days}d atrás`;
-        if (hours > 0) return `${hours}h atrás`;
-        if (minutes > 0) return `${minutes}m atrás`;
-        return 'agora';
     };
 
     return (
@@ -86,15 +104,15 @@ export const TicketList: React.FC<TicketListProps> = ({
                                 {lastMessage && getChannelIcon(lastMessage.platform)}
                             </div>
                             <span className="text-xs text-gray-500">
-                                {lastMessage ? getElapsedTime(lastMessage.timestamp) : ''}
+                                {lastMessage ? formatElapsedTime(lastMessage.timestamp) : ''}
                             </span>
                         </div>
-                        <p className="text-sm text-gray-600 mb-2">
+                        <p className="text-sm text-gray-600 mb-2 line-clamp-2 break-words">
                             {lastMessage?.content || 'Sem mensagens'}
                         </p>
                         <span className={`text-xs px-2 py-1 rounded ${ticket.status === 'resolved'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-blue-100 text-blue-700'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-blue-100 text-blue-700'
                             }`}>
                             {ticket.status === 'resolved' ? 'Resolvido' : 'Em Atendimento'}
                         </span>
