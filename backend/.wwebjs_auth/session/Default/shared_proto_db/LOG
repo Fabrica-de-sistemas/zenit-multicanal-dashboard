@@ -1,2 +1,3 @@
-2024/11/24-12:13:27.304 a903 Creating DB /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/shared_proto_db since it was missing.
-2024/11/24-12:13:27.309 a903 Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/shared_proto_db/MANIFEST-000001
+2024/11/25-22:41:27.670 a603 Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/shared_proto_db/MANIFEST-000001
+2024/11/25-22:41:27.670 a603 Recovering log #3
+2024/11/25-22:41:27.670 a603 Reusing old log /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/shared_proto_db/000003.log 

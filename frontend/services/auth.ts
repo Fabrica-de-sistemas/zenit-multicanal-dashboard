@@ -19,6 +19,12 @@ export const authService = {
       const response = await api.post('/auth/register', data);
       console.log('Resposta da API:', response.data);
 
+      // Salvar dados do usuário e token após registro bem-sucedido
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('userData', JSON.stringify(response.data.user));
+      }
+
       return response.data;
     } catch (error) {
       console.error('Erro na requisição:', error);
@@ -37,9 +43,10 @@ export const authService = {
       const response = await api.post<AuthResponse>('/auth/login', data);
       console.log('Resposta do login:', response.data);
       
-      // Salvar o token
+      // Salvar o token e dados do usuário
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('userData', JSON.stringify(response.data.user));
       }
       
       return response.data;
@@ -50,5 +57,23 @@ export const authService = {
       }
       throw error;
     }
+  },
+
+  // Novas funções adicionadas
+  logout(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userData');
+  },
+
+  getUser(): any {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      return JSON.parse(userData);
+    }
+    return null;
+  },
+
+  isAuthenticated(): boolean {
+    return !!localStorage.getItem('token');
   }
 };

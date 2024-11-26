@@ -41,7 +41,15 @@ export function LoginForm() {
       setError('');
 
       await authService.login(data);
-      router.push('/dashboard');
+      
+      // Verifica se o login foi bem-sucedido
+      if (authService.isAuthenticated()) {
+        const user = authService.getUser();
+        console.log('Usuário logado:', user);
+        router.push('/dashboard');
+      } else {
+        throw new Error('Erro ao autenticar usuário');
+      }
     } catch (err) {
       console.error('Erro ao fazer login:', err);
       setError(err instanceof Error ? err.message : 'Erro ao fazer login');
