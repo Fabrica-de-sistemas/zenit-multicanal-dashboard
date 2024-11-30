@@ -1,10 +1,14 @@
-// src/middleware/authMiddleware.ts
+// backend/src/middleware/authMiddleware.ts
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { JWTPayload } from '../types/auth';
 
 export interface AuthRequest extends Request {
-  user?: JWTPayload;
+  user?: {
+    userId: string;
+    email: string;
+    role?: string;
+    sector?: string;
+  };
 }
 
 export const authMiddleware = (
@@ -28,7 +32,7 @@ export const authMiddleware = (
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET || 'fallback_secret'
-    ) as JWTPayload;
+    ) as { userId: string; email: string; sector?: string };
 
     req.user = decoded;
 

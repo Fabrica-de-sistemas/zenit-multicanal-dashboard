@@ -1,10 +1,5 @@
 export interface AuthResponse {
-  user: {
-    id: string;
-    fullName: string;
-    email: string;
-    role: string;
-  };
+  user: User;
   token: string;
 }
 
@@ -13,11 +8,22 @@ export interface RegisterData {
   email: string;
   registration: string;
   password: string;
+  sector?: string;
 }
 
 export interface LoginData {
   email: string;
   password: string;
+}
+
+export interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+  sector: string; 
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SocialMessage {

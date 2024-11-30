@@ -15,13 +15,13 @@ export const authController = {
         password: '[PROTEGIDO]'
       });
 
-      const { fullName, email, registration, password } = req.body;
+      const { fullName, email, registration, password, sector = 'Geral' } = req.body;
 
       // Validação dos dados
       if (!fullName || !email || !registration || !password) {
         console.log('Erro: Dados inválidos');
-        return res.status(400).json({ 
-          error: 'Todos os campos são obrigatórios' 
+        return res.status(400).json({
+          error: 'Todos os campos são obrigatórios'
         });
       }
 
@@ -51,29 +51,27 @@ export const authController = {
         console.log('Tentando criar usuário no banco...');
         const result = await execute(
           authQueries.createUser,
-          [fullName, email, registration, hashedPassword, 'OPERATOR']
+          [fullName, email, registration, hashedPassword, 'OPERATOR', sector]
         );
-      
-        // Pega o ID do usuário inserido
+
         const userId = result.insertId;
         console.log('Usuário criado com sucesso. ID:', userId);
-      
-        // Busca o usuário criado
+
         const users = await query(
           authQueries.findById,
           [userId]
         );
-      
+
         if (users.length === 0) {
           throw new Error('Erro ao recuperar usuário criado');
         }
-      
+
         const newUser = users[0];
 
         const token = jwt.sign(
-          { 
+          {
             userId: newUser.id,
-            email: newUser.email 
+            email: newUser.email
           },
           process.env.JWT_SECRET || 'fallback_secret',
           { expiresIn: '24h' }
@@ -88,14 +86,15 @@ export const authController = {
             id: newUser.id,
             fullName: newUser.full_name,
             email: newUser.email,
-            role: newUser.role
+            role: newUser.role,
+            sector: newUser.sector
           },
           token
         });
 
       } catch (dbError) {
         console.error('Erro detalhado:', dbError);
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: 'Erro ao salvar usuário',
           details: dbError instanceof Error ? dbError.message : 'Erro desconhecido'
         });
@@ -103,7 +102,7 @@ export const authController = {
 
     } catch (error) {
       console.error('Erro no processo de registro:', error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Erro interno do servidor',
         details: error instanceof Error ? error.message : 'Erro desconhecido'
       });
@@ -161,7 +160,8 @@ export const authController = {
           id: user.id,
           fullName: user.full_name,
           email: user.email,
-          role: user.role
+          role: user.role,
+          sector: user.sector
         },
         token
       });
@@ -204,6 +204,7 @@ export const authController = {
         fullName: user.full_name,
         email: user.email,
         role: user.role,
+        sector: user.sector,
         createdAt: user.created_at,
         updatedAt: user.updated_at
       });
@@ -214,5 +215,62 @@ export const authController = {
         details: error instanceof Error ? error.message : 'Erro desconhecido'
       });
     }
+  },
+
+  async updateSector(req: AuthRequest, res: Response) {
+    try {
+      console.log('\n=== INÍCIO DA ATUALIZAÇÃO DE SETOR ===');
+      const userId = req.user?.userId;
+      const { sector } = req.body;
+
+      console.log('Dados recebidos:', {
+        userId,
+        sector
+      });
+
+      if (!userId || !sector) {
+        console.log('Erro: Dados inválidos');
+        return res.status(400).json({ error: 'Setor é obrigatório' });
+      }
+
+      try {
+        console.log('Tentando atualizar setor do usuário...');
+        await execute(authQueries.updateUserSector, [sector, userId]);
+
+        console.log('Buscando usuário atualizado...');
+        const users = await query(authQueries.findById, [userId]);
+
+        if (users.length === 0) {
+          console.log('Erro: Usuário não encontrado');
+          return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+
+        const user = users[0];
+        console.log('Setor atualizado com sucesso');
+        console.log('=== FIM DA ATUALIZAÇÃO DE SETOR ===\n');
+
+        return res.json({
+          id: user.id,
+          fullName: user.full_name,
+          email: user.email,
+          role: user.role,
+          sector: user.sector
+        });
+
+      } catch (dbError) {
+        console.error('Erro detalhado:', dbError);
+        return res.status(500).json({
+          error: 'Erro ao atualizar setor',
+          details: dbError instanceof Error ? dbError.message : 'Erro desconhecido'
+        });
+      }
+
+    } catch (error) {
+      console.error('Erro ao atualizar setor:', error);
+      return res.status(500).json({
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
   }
-};
+}

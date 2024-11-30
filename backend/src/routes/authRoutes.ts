@@ -21,9 +21,15 @@ const handleProfile = async (req: AuthRequest, res: Response) => {
   await authController.getProfile(req, res);
 };
 
+const handleSector = async (req: AuthRequest, res: Response) => {
+  console.log('Rota /sector acessada');
+  await authController.updateSector(req, res);
+};
+
 // Rotas
 router.post('/register', handleRegister);
 router.post('/login', handleLogin);
 router.get('/profile', handleProfile as any);
+router.put('/sector', handleSector as any);
 
 export default router;

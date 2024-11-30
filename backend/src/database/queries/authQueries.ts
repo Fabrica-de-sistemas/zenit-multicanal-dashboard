@@ -31,4 +31,10 @@ export const authQueries = {
     SELECT * FROM users 
     WHERE email = ?
   `,
+
+  updateUserSector: `
+    UPDATE users 
+    SET sector = ? 
+    WHERE id = ?
+  `
 };

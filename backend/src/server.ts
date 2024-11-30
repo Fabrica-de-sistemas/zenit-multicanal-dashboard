@@ -6,13 +6,14 @@ import { Server as SocketServer } from 'socket.io';
 import authRoutes from './routes/authRoutes';
 import messageRoutes from './routes/messageRoutes';
 import WhatsAppService from './services/WhatsAppService';
+import CompanyChatService from './services/CompanyChatService';
 
 const app = express();
 const httpServer = createServer(app);
 
-// Configuração do CORS antes de tudo
+// Configuração do CORS
 app.use(cors({
-    origin: 'http://localhost:3000', // URL do seu frontend
+    origin: 'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
@@ -26,7 +27,7 @@ const socketServer = new SocketServer(httpServer, {
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true
     },
-    allowEIO3: true, // Permite Engine.IO versão 3
+    allowEIO3: true,
     transports: ['websocket', 'polling'],
     pingTimeout: 60000,
     pingInterval: 25000
@@ -51,23 +52,46 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 
-// Configuração do WhatsApp
+// Inicialização dos serviços
 const whatsappService = WhatsAppService.getInstance();
+const companyChatService = CompanyChatService.getInstance();
 
 // Configuração do Socket.IO
 socketServer.on('connection', (socket) => {
     console.log('Cliente conectado:', socket.id);
 
-    // Envia todos os tickets quando um cliente se conecta
+    // Envio inicial de tickets do WhatsApp
     const tickets = whatsappService.getAllTickets();
     socket.emit('tickets', tickets);
     console.log('Tickets enviados para novo cliente:', tickets.length);
 
-    socket.on('disconnect', () => {
-        console.log('Cliente desconectado:', socket.id);
+    // Eventos do Chat Interno
+    socket.on('getChatHistory', () => {
+        console.log('Solicitação de histórico do chat interno');
+        const messages = companyChatService.getMessages();
+        socket.emit('chatHistory', messages);
     });
 
-    // Handle para resolver ticket
+    socket.on('sendMessage', async (messageData) => {
+        try {
+            console.log('Nova mensagem do chat interno:', messageData);
+            
+            if (!messageData.content || !messageData.userId) {
+                throw new Error('Dados da mensagem inválidos');
+            }
+
+            const newMessage = await companyChatService.addMessage(messageData);
+            socketServer.emit('newMessage', newMessage);
+            console.log('Mensagem do chat interno enviada com sucesso');
+        } catch (error) {
+            console.error('Erro ao processar mensagem do chat interno:', error);
+            socket.emit('messageError', {
+                error: 'Não foi possível enviar a mensagem'
+            });
+        }
+    });
+
+    // Eventos do WhatsApp
     socket.on('resolveTicket', (ticketId: string) => {
         console.log('Solicitação para resolver ticket:', ticketId);
         const resolved = whatsappService.resolveTicket(ticketId);
@@ -76,25 +100,28 @@ socketServer.on('connection', (socket) => {
         }
     });
 
-    // Handle para enviar mensagem
-    socket.on('sendMessage', async ({ ticketId, message }) => {
-        console.log('Recebendo mensagem para enviar:', { ticketId, message });
+    socket.on('sendWhatsAppMessage', async ({ ticketId, message }) => {
+        console.log('Recebendo mensagem WhatsApp para enviar:', { ticketId, message });
         try {
             const success = await whatsappService.sendMessage(ticketId, message);
             if (success) {
-                console.log('Mensagem enviada com sucesso');
+                console.log('Mensagem WhatsApp enviada com sucesso');
             } else {
-                console.log('Falha ao enviar mensagem');
+                console.log('Falha ao enviar mensagem WhatsApp');
                 socket.emit('messageError', { 
                     error: 'Não foi possível enviar a mensagem' 
                 });
             }
         } catch (error) {
-            console.error('Erro ao enviar mensagem:', error);
+            console.error('Erro ao enviar mensagem WhatsApp:', error);
             socket.emit('messageError', { 
                 error: 'Erro ao enviar mensagem' 
             });
         }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Cliente desconectado:', socket.id);
     });
 });
 

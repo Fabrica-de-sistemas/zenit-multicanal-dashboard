@@ -1,0 +1,56 @@
+// frontend/src/types/chatTypes.ts
+
+export interface CompanyMessage {
+    id: string;
+    content: string;
+    userId: string;
+    userName: string;
+    timestamp: string;
+    replyTo?: {
+        id: string;
+        content: string;
+        userName: string;
+    };
+    reactions?: Reaction[];
+    mentions?: string[];
+}
+
+export interface Reaction {
+    emoji: string;
+    users: string[];
+}
+
+export interface PrivateChat {
+    id: string;
+    users: {
+        id: string;
+        name: string;
+    }[];
+    lastMessage?: {
+        content: string;
+        timestamp: string;
+    };
+}
+
+export interface OnlineUser {
+    id: string;
+    name: string;
+    role: string;
+    sector: string;
+    status: UserStatus;
+    isOnline: boolean;
+    lastSeen: string;
+  }
+
+export interface ChatMessage {
+    id: string;
+    content: string;
+    userId: string;
+    userName: string;
+    userRole: string;
+    timestamp: string;
+}
+
+export type UserStatus = 'available' | 'away' | 'meeting';
+
+export type SortType = 'az' | 'za' | 'sector';
