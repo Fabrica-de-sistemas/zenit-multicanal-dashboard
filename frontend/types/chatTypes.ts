@@ -1,5 +1,7 @@
 // frontend/src/types/chatTypes.ts
 
+import { statusConfig } from "@/config/statusConfig";
+
 export interface CompanyMessage {
     id: string;
     content: string;
@@ -37,9 +39,10 @@ export interface OnlineUser {
     name: string;
     role: string;
     sector: string;
-    status: UserStatus;
+    status: keyof typeof statusConfig;
     isOnline: boolean;
     lastSeen: string;
+    socketId?: string;
   }
 
 export interface ChatMessage {

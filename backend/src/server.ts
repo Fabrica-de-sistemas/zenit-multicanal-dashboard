@@ -72,6 +72,28 @@ socketServer.on('connection', (socket) => {
         socket.emit('chatHistory', messages);
     });
 
+    // Evento quando um usuário se conecta ao chat
+    socket.on('userConnected', (userData) => {
+        console.log('Usuário conectado ao chat:', userData);
+        companyChatService.addOnlineUser({
+            ...userData,
+            socketId: socket.id,
+            isOnline: true,
+            lastSeen: new Date().toISOString()
+        });
+        // Emite a lista atualizada para todos
+        socketServer.emit('onlineUsers', companyChatService.getOnlineUsers());
+    });
+
+    // Evento para atualização de status do usuário
+    socket.on('updateStatus', ({ userId, status }) => {
+        console.log('Atualizando status do usuário:', { userId, status });
+        const updatedUser = companyChatService.updateUserStatus(userId, status);
+        if (updatedUser) {
+            socketServer.emit('onlineUsers', companyChatService.getOnlineUsers());
+        }
+    });
+
     socket.on('sendMessage', async (messageData) => {
         try {
             console.log('Nova mensagem do chat interno:', messageData);
@@ -122,6 +144,10 @@ socketServer.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('Cliente desconectado:', socket.id);
+        // Remove usuário da lista de online
+        companyChatService.removeOnlineUser(socket.id);
+        // Emite lista atualizada para todos
+        socketServer.emit('onlineUsers', companyChatService.getOnlineUsers());
     });
 });
 

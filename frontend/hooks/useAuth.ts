@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 
 interface User {
+  sector: string;
   id: string;
   fullName: string;
   email: string;
