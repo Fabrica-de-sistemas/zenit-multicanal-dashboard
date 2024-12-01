@@ -7,6 +7,7 @@ import authRoutes from './routes/authRoutes';
 import messageRoutes from './routes/messageRoutes';
 import WhatsAppService from './services/WhatsAppService';
 import CompanyChatService from './services/CompanyChatService';
+import uploadRoutes from './routes/uploadRoutes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -49,6 +50,8 @@ app.use((req, res, next) => {
 });
 
 // Rotas
+app.use('/uploads', express.static('uploads'));
+app.use('/api', uploadRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 
@@ -94,10 +97,47 @@ socketServer.on('connection', (socket) => {
         }
     });
 
+    // Eventos de Chat Privado
+    socket.on('startPrivateChat', ({ fromUserId, toUserId }) => {
+        console.log('Iniciando chat privado:', { fromUserId, toUserId });
+        const chat = companyChatService.startPrivateChat(fromUserId, toUserId);
+        socket.emit('privateChatStarted', chat);
+    });
+
+    socket.on('sendPrivateMessage', async (messageData) => {
+        try {
+            console.log('Nova mensagem privada:', {
+                ...messageData,
+                content: messageData.content.substring(0, 50) + '...'
+            });
+
+            if (!messageData.content || !messageData.userId || !messageData.toUserId) {
+                throw new Error('Dados da mensagem privada inválidos');
+            }
+
+            const newMessage = await companyChatService.addPrivateMessage(messageData);
+
+            // Emite para todos (incluindo o remetente e o destinatário)
+            socketServer.emit('newPrivateMessage', newMessage);
+
+            console.log('Mensagem privada enviada com sucesso');
+        } catch (error) {
+            console.error('Erro ao processar mensagem privada:', error);
+            socket.emit('messageError', {
+                error: 'Não foi possível enviar a mensagem privada'
+            });
+        }
+    });
+
+    socket.on('getPrivateChatHistory', ({ fromUserId, toUserId }) => {
+        const messages = companyChatService.getPrivateMessages(fromUserId, toUserId);
+        socket.emit('privateChatHistory', { messages });
+    });
+
     socket.on('sendMessage', async (messageData) => {
         try {
             console.log('Nova mensagem do chat interno:', messageData);
-            
+
             if (!messageData.content || !messageData.userId) {
                 throw new Error('Dados da mensagem inválidos');
             }
@@ -130,14 +170,14 @@ socketServer.on('connection', (socket) => {
                 console.log('Mensagem WhatsApp enviada com sucesso');
             } else {
                 console.log('Falha ao enviar mensagem WhatsApp');
-                socket.emit('messageError', { 
-                    error: 'Não foi possível enviar a mensagem' 
+                socket.emit('messageError', {
+                    error: 'Não foi possível enviar a mensagem'
                 });
             }
         } catch (error) {
             console.error('Erro ao enviar mensagem WhatsApp:', error);
-            socket.emit('messageError', { 
-                error: 'Erro ao enviar mensagem' 
+            socket.emit('messageError', {
+                error: 'Erro ao enviar mensagem'
             });
         }
     });

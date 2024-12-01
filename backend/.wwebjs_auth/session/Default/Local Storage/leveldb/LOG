@@ -1,3 +1,6 @@
-2024/11/30-15:20:02.424 ae03 Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
-2024/11/30-15:20:02.424 ae03 Recovering log #13
-2024/11/30-15:20:02.424 ae03 Reusing old log /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/000013.log 
+2024/11/30-21:11:38.807 a403 Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2024/11/30-21:11:38.808 a403 Recovering log #16
+2024/11/30-21:11:38.809 a403 Reusing old log /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/000016.log 
+2024/11/30-22:11:49.420 13d3f Level-0 table #21: started
+2024/11/30-22:11:49.423 13d3f Level-0 table #21: 14608 bytes OK
+2024/11/30-22:11:49.428 13d3f Delete type=0 #16
