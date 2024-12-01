@@ -74,12 +74,14 @@ export const ChatMessages = () => {
       {messages.map((message) => (
         <div
           key={message.id}
-          className={`flex flex-col ${message.userId === user?.id ? 'items-end' : 'items-start'}`}
+          className={`flex flex-col ${message.userId === user?.id ? 'items-end' : 'items-start'
+            }`}
         >
           <div
-            className={`max-w-[70%] ${
-              message.userId === user?.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'
-            } rounded-lg p-3`}
+            className={`max-w-[70%] ${message.userId === user?.id
+              ? 'bg-emerald-100 text-gray-800'  // Mudando de blue-500 para emerald-600
+              : 'bg-gray-100 text-gray-800'
+              } rounded-lg p-3`}
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium">{message.userName}</span>
@@ -104,9 +106,8 @@ export const ChatMessages = () => {
                     href={message.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex items-center gap-2 ${
-                      message.userId === user?.id ? 'text-white hover:text-gray-100' : 'text-blue-500 hover:text-blue-600'
-                    }`}
+                    className={`flex items-center gap-2 ${message.userId === user?.id ? 'text-white hover:text-gray-100' : 'text-blue-500 hover:text-blue-600'
+                      }`}
                   >
                     <Paperclip size={16} />
                     <span className="underline">{message.fileName}</span>
@@ -115,9 +116,9 @@ export const ChatMessages = () => {
                   <a
                     href={message.fileUrl}
                     download={message.fileName}
-                    className={`flex items-center gap-2 ${
-                      message.userId === user?.id ? 'text-white hover:text-gray-100' : 'text-blue-500 hover:text-blue-600'
-                    }`}
+                    className={`flex items-center gap-2 ${message.userId === user?.id ? 'text-emerald-700 hover:text-emerald-800'
+                      : 'text-blue-500 hover:text-blue-600'
+                      }`}
                   >
                     <Paperclip size={16} />
                     <span className="underline">{message.fileName}</span>

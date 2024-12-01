@@ -109,7 +109,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                         )}
                         <div className={`flex flex-col ${message.sender.isOperator ? 'items-end' : ''}`}>
                             <div className={`p-4 rounded-2xl shadow-sm max-w-md ${message.sender.isOperator
-                                    ? 'bg-blue-500 text-white'
+                                    ? 'bg-emerald-100 text-gray-800'
                                     : 'bg-white'
                                 }`}>
                                 <div className="text-xs mb-1 font-medium">
