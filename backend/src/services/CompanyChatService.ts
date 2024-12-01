@@ -19,6 +19,9 @@ interface ChatMessage {
   userName: string;
   userRole: string;
   timestamp: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
   type: 'public' | 'private';
   toUserId?: string;
 }

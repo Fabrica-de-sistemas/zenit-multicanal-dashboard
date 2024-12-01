@@ -17,6 +17,23 @@ export interface CompanyMessage {
     mentions?: string[];
 }
 
+export interface Message {
+    id: string;
+    content: string;
+    userId: string;
+    userName: string;
+    platform: string;
+    sender: {
+        name: string;
+        username: string;
+        isOperator?: boolean;
+    };
+    timestamp: string;
+    fileUrl?: string;
+    fileName?: string;
+    fileType?: string;
+}
+
 export interface Reaction {
     emoji: string;
     users: string[];
@@ -43,7 +60,7 @@ export interface OnlineUser {
     isOnline: boolean;
     lastSeen: string;
     socketId?: string;
-  }
+}
 
 export interface ChatMessage {
     id: string;
@@ -52,6 +69,9 @@ export interface ChatMessage {
     userName: string;
     userRole: string;
     timestamp: string;
+    fileUrl?: string;
+    fileName?: string;
+    fileType?: string;
 }
 
 export type UserStatus = 'available' | 'away' | 'meeting';

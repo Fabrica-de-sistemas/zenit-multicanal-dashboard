@@ -8,6 +8,7 @@ import messageRoutes from './routes/messageRoutes';
 import WhatsAppService from './services/WhatsAppService';
 import CompanyChatService from './services/CompanyChatService';
 import uploadRoutes from './routes/uploadRoutes';
+import path from 'path';
 
 const app = express();
 const httpServer = createServer(app);
