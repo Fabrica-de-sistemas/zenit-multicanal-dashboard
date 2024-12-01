@@ -5,10 +5,18 @@ import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuth } from '@/hooks/useAuth';
 import { ChatMessage } from '@/types/chatTypes';
-import { Paperclip } from 'lucide-react';
+import { Paperclip, Smile } from 'lucide-react';
+import { MessageReactions } from './MessageReactions';
+
+interface MessageReaction {
+  emoji: string;
+  userId: string;
+  userName: string;
+}
 
 export const ChatMessages = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [activeEmojiPicker, setActiveEmojiPicker] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socket = useSocket();
   const { user } = useAuth();
@@ -28,15 +36,33 @@ export const ChatMessages = () => {
     });
 
     socket.on('newMessage', (message: ChatMessage) => {
-      setMessages(prev => [...prev, message]);
+      setMessages((prev) => [...prev, message]);
       scrollToBottom();
+    });
+
+    socket.on('messageReacted', (updatedMessage: ChatMessage) => {
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
+      );
     });
 
     return () => {
       socket.off('chatHistory');
       socket.off('newMessage');
+      socket.off('messageReacted');
     };
   }, [socket]);
+
+  const handleReaction = (messageId: string, emoji: string) => {
+    if (!socket || !user) return;
+
+    socket.emit('addReaction', {
+      messageId,
+      emoji,
+      userId: user.id,
+      userName: user.fullName,
+    });
+  };
 
   // Função para verificar se o arquivo é PDF
   const isPdfFile = (fileType?: string) => {
@@ -51,7 +77,9 @@ export const ChatMessages = () => {
           className={`flex flex-col ${message.userId === user?.id ? 'items-end' : 'items-start'}`}
         >
           <div
-            className={`max-w-[70%] ${message.userId === user?.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'} rounded-lg p-3`}
+            className={`max-w-[70%] ${
+              message.userId === user?.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'
+            } rounded-lg p-3`}
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium">{message.userName}</span>
@@ -71,39 +99,47 @@ export const ChatMessages = () => {
                       <span>{message.fileName}</span>
                     </div>
                   </>
+                ) : isPdfFile(message.fileType) ? (
+                  <a
+                    href={message.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center gap-2 ${
+                      message.userId === user?.id ? 'text-white hover:text-gray-100' : 'text-blue-500 hover:text-blue-600'
+                    }`}
+                  >
+                    <Paperclip size={16} />
+                    <span className="underline">{message.fileName}</span>
+                  </a>
                 ) : (
-                  // Se for PDF, abre em uma nova aba
-                  isPdfFile(message.fileType) ? (
-                    <a
-                      href={message.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`flex items-center gap-2 ${message.userId === user?.id ? 'text-white hover:text-gray-100' : 'text-blue-500 hover:text-blue-600'}`}
-                    >
-                      <Paperclip size={16} />
-                      <span className="underline">{message.fileName}</span>
-                    </a>
-                  ) : (
-                    // Para outros tipos de arquivo, força o download
-                    <a
-                      href={message.fileUrl}
-                      download={message.fileName} // Isso força o download
-                      className={`flex items-center gap-2 ${message.userId === user?.id ? 'text-white hover:text-gray-100' : 'text-blue-500 hover:text-blue-600'}`}
-                    >
-                      <Paperclip size={16} />
-                      <span className="underline">{message.fileName}</span>
-                    </a>
-                  )
+                  <a
+                    href={message.fileUrl}
+                    download={message.fileName}
+                    className={`flex items-center gap-2 ${
+                      message.userId === user?.id ? 'text-white hover:text-gray-100' : 'text-blue-500 hover:text-blue-600'
+                    }`}
+                  >
+                    <Paperclip size={16} />
+                    <span className="underline">{message.fileName}</span>
+                  </a>
                 )}
               </div>
             ) : (
-              <p className="text-sm whitespace-pre-wrap break-words">
-                {message.content}
-              </p>
+              <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
             )}
             <span className="text-xs opacity-75 mt-1 block">
               {new Date(message.timestamp).toLocaleTimeString()}
             </span>
+
+            <MessageReactions
+              reactions={message.reactions || []}
+              onReact={(emoji) => handleReaction(message.id, emoji)}
+              showEmojiPicker={activeEmojiPicker === message.id}
+              onToggleEmojiPicker={() =>
+                setActiveEmojiPicker(activeEmojiPicker === message.id ? null : message.id)
+              }
+              currentUserId={user?.id || ''}
+            />
           </div>
         </div>
       ))}

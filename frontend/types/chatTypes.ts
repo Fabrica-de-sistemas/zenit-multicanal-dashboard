@@ -34,6 +34,25 @@ export interface Message {
     fileType?: string;
 }
 
+export interface ChatMessage {
+    id: string;
+    content: string;
+    userId: string;
+    userName: string;
+    userRole: string;
+    timestamp: string;
+    fileUrl?: string;
+    fileName?: string;
+    fileType?: string;
+    reactions?: MessageReaction[];
+}
+
+interface MessageReaction {
+    emoji: string;
+    userId: string;
+    userName: string;
+}
+
 export interface Reaction {
     emoji: string;
     users: string[];
@@ -62,18 +81,8 @@ export interface OnlineUser {
     socketId?: string;
 }
 
-export interface ChatMessage {
-    id: string;
-    content: string;
-    userId: string;
-    userName: string;
-    userRole: string;
-    timestamp: string;
-    fileUrl?: string;
-    fileName?: string;
-    fileType?: string;
-}
-
 export type UserStatus = 'available' | 'away' | 'meeting';
 
 export type SortType = 'az' | 'za' | 'sector';
+
+export type { MessageReaction };

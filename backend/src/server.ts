@@ -154,6 +154,19 @@ socketServer.on('connection', (socket) => {
         }
     });
 
+    socket.on('addReaction', async ({ messageId, emoji, userId, userName }) => {
+        const updatedMessage = await companyChatService.addReaction(
+            messageId,
+            userId,
+            userName,
+            emoji
+        );
+
+        if (updatedMessage) {
+            socketServer.emit('messageReacted', updatedMessage);
+        }
+    });
+
     // Eventos do WhatsApp
     socket.on('resolveTicket', (ticketId: string) => {
         console.log('Solicitação para resolver ticket:', ticketId);
