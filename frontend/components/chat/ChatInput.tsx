@@ -67,7 +67,7 @@ export const ChatInput = () => {
   };
 
   return (
-    <div className="p-4 border-t bg-white">
+    <div className="p-4 border-t border-slate-100 bg-white/90 backdrop-blur-sm">
       <div className="flex space-x-2">
         <input
           type="file"
@@ -78,24 +78,24 @@ export const ChatInput = () => {
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="p-2 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50"
+          className="p-2.5 text-slate-400 hover:text-indigo-500 rounded-xl hover:bg-indigo-50 transition-all duration-200"
           title="Anexar arquivo"
         >
-          <Paperclip size={18} />
+          <Paperclip size={20} />
         </button>
         <input
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Digite sua mensagem..."
-          className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
           onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
         />
         <button
           onClick={handleSendMessage}
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl transition-all duration-200 flex items-center"
         >
-          <Send className="w-5 h-5" />
+          <Send size={20} />
         </button>
       </div>
     </div>

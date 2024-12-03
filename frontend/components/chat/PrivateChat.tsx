@@ -215,7 +215,7 @@ export const PrivateChat: React.FC<PrivateChatProps> = ({
                     >
                         <div
                             className={`max-w-[80%] p-3 rounded-lg ${message.userId === fromUserId
-                                    ? 'bg-blue-500 text-white'
+                                    ? 'bg-emerald-100 text-gray-800'
                                     : 'bg-gray-100 text-gray-800'
                                 }`}
                         >
@@ -276,11 +276,11 @@ export const PrivateChat: React.FC<PrivateChatProps> = ({
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder="Digite sua mensagem..."
-                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-100"
                     />
                     <button
                         onClick={handleSendMessage}
-                        className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        className="p-2 bg-emerald-500 text-gray-600 rounded-lg"
                     >
                         <Send size={18} />
                     </button>

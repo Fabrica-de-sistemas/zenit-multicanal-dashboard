@@ -75,11 +75,11 @@ export interface OnlineUser {
     name: string;
     role: string;
     sector: string;
-    status: keyof typeof statusConfig;
+    status: UserStatus;
     isOnline: boolean;
     lastSeen: string;
     socketId?: string;
-}
+  }
 
 export type UserStatus = 'available' | 'away' | 'meeting';
 
