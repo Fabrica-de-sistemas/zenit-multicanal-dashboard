@@ -9,15 +9,12 @@ export const ChatHeader = () => {
 
   useEffect(() => {
     if (!socket) return;
-
-    // Atualiza o contador quando receber a lista de usuários
     const handleOnlineUsers = (users: any[]) => {
       setOnlineUsers(users.length);
     };
 
     socket.on('onlineUsers', handleOnlineUsers);
 
-    // Solicita a lista inicial de usuários
     socket.emit('getOnlineUsers');
 
     return () => {

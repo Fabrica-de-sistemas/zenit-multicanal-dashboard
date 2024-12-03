@@ -3,7 +3,7 @@ import React from 'react';
 import { MessageCircle } from 'lucide-react';
 import { OnlineUser } from '@/types/chatTypes';
 
-// Função auxiliar para pegar a cor do status
+
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'available':
@@ -17,7 +17,6 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Função auxiliar para pegar a cor do ring
 const getStatusRingColor = (status: string) => {
   switch (status) {
     case 'available':
