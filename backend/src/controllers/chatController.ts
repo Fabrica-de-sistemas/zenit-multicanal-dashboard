@@ -1,7 +1,7 @@
 // backend/src/controllers/chatController.ts
 
 import { Request, Response } from 'express';
-import { ChatService } from '../services/ChatService';
+import ChatService from '../services/ChatService';
 
 export const chatController = {
   async getHistory(req: Request, res: Response) {

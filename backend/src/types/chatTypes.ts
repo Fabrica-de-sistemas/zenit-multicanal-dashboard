@@ -1,4 +1,22 @@
 // backend/src/types/chatTypes.ts
+export interface CompanyMessage {
+  id: string;
+  content: string;
+  userId: string;
+  userName: string;
+  timestamp: string;
+  replyTo?: {
+    id: string;
+    content: string;
+    userName: string;
+  };
+  reactions?: {
+    emoji: string;
+    users: string[];
+  }[];
+  mentions?: string[];
+}
+
 export interface MessageReaction {
   emoji: string;
   userId: string;
@@ -16,5 +34,4 @@ export interface ChatMessage {
   fileName?: string;
   fileType?: string;
   reactions: MessageReaction[];
-  toUserId?: string;
 }

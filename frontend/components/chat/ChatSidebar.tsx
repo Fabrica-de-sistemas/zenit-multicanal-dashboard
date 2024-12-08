@@ -47,8 +47,8 @@ export const ChatSidebar = () => {
                     const existingChat = prev.find(chat => chat.userId === message.userId);
                     if (existingChat) {
                         if (existingChat.isMinimized) {
-                            return prev.map(chat => 
-                                chat.userId === message.userId 
+                            return prev.map(chat =>
+                                chat.userId === message.userId
                                     ? { ...chat, hasNewMessage: true }
                                     : chat
                             );
@@ -73,12 +73,12 @@ export const ChatSidebar = () => {
 
     const handleStartPrivateChat = (targetUserId: string, targetUserName: string) => {
         if (!user || !socket) return;
-        
+
         setPrivateChats(prev => {
             const existingChat = prev.find(chat => chat.userId === targetUserId);
             if (existingChat) {
-                return prev.map(chat => 
-                    chat.userId === targetUserId 
+                return prev.map(chat =>
+                    chat.userId === targetUserId
                         ? { ...chat, isMinimized: false, hasNewMessage: false }
                         : chat
                 );
@@ -132,7 +132,7 @@ export const ChatSidebar = () => {
                             </p>
                         </div>
                     </div>
-                    <UserStatusSelector 
+                    <UserStatusSelector
                         currentStatus={currentStatus}
                         onStatusChange={(status) => {
                             setCurrentStatus(status);
@@ -146,18 +146,19 @@ export const ChatSidebar = () => {
                     />
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    <OnlineUsersList 
-                        users={onlineUsers} 
+                    <OnlineUsersList
+                        users={onlineUsers}
                         onStartPrivateChat={handleStartPrivateChat}
+                        currentUserId={user.id} // Passando o ID do usuário atual
                     />
                 </div>
             </div>
 
             <div className="fixed bottom-0 right-0 flex flex-row-reverse gap-4 p-4 z-50">
                 {privateChats.map((chat, index) => (
-                    <div 
-                        key={chat.userId} 
-                        style={{ 
+                    <div
+                        key={chat.userId}
+                        style={{
                             right: `${(index * 288) + 16}px`
                         }}
                         className="absolute bottom-0"
