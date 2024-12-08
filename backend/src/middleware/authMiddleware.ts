@@ -32,9 +32,15 @@ export const authMiddleware = (
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET || 'fallback_secret'
-    ) as { userId: string; email: string; sector?: string };
+    ) as { userId: string; email: string; role?: string; sector?: string }; // Adicionado role aqui
 
-    req.user = decoded;
+    // Garantir que todos os campos necessários sejam passados para req.user
+    req.user = {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+      sector: decoded.sector
+    };
 
     next();
   } catch (error) {

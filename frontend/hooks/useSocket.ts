@@ -6,11 +6,16 @@ export function useSocket() {
     const [socket, setSocket] = useState<Socket | null>(null);
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
+        
         const newSocket = io('http://localhost:5000', {
             reconnectionDelayMax: 10000,
             reconnection: true,
             reconnectionAttempts: 10,
-            transports: ['websocket', 'polling'], // Tente primeiro WebSocket, depois polling
+            transports: ['websocket', 'polling'],
+            auth: {
+                token // Adicionar token na autenticação
+            },
             withCredentials: true,
             timeout: 10000
         });
@@ -20,7 +25,10 @@ export function useSocket() {
         });
 
         newSocket.on('connect_error', (error) => {
-            console.error('Erro de conexão Socket.IO:', error.message);
+            // Tratar o erro silenciosamente se for apenas um erro de websocket
+            if (error.message !== 'websocket error') {
+                console.error('Erro de conexão Socket.IO:', error.message);
+            }
         });
 
         newSocket.on('disconnect', (reason) => {

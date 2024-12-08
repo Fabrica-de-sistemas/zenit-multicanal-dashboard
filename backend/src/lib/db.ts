@@ -14,11 +14,11 @@ const pool = mysql.createPool({
 // Teste de conexão
 pool.getConnection()
     .then(connection => {
-        console.log('Conexão com o banco estabelecida com sucesso!');
+        console.log('✅ Conexão com o banco de dados estabelecida com sucesso!');
         connection.release();
     })
     .catch(err => {
-        console.error('Erro ao conectar com o banco:', err);
+        console.error('❌ Erro ao conectar com o banco de dados:', err);
     });
 
 // Tipos para o MySQL

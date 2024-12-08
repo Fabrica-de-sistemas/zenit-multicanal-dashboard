@@ -1,118 +1,145 @@
 // backend/src/controllers/adminController.ts
 import { Request, Response } from 'express';
-import { adminService } from '../services/adminService';
-import { AuthRequest } from '../middleware/authMiddleware';
+import { query, execute } from '../lib/db';
 
 export const adminController = {
-  async listUsers(req: Request, res: Response) {
-    try {
-      const users = await adminService.listUsers();
-      return res.json(users);
-    } catch (error) {
-      console.error('Erro ao listar usuários:', error);
-      return res.status(500).json({ error: 'Erro ao listar usuários' });
-    }
-  },
+    async listUsers(req: Request, res: Response) {
+        try {
+            console.log('Iniciando listagem de usuários...');
 
-  async createUser(req: Request, res: Response) {
-    try {
-      const userData = req.body;
-      const user = await adminService.createUser(userData);
-      return res.status(201).json(user);
-    } catch (error) {
-      console.error('Erro ao criar usuário:', error);
-      return res.status(500).json({ error: 'Erro ao criar usuário' });
-    }
-  },
+            const sqlQuery = `
+            SELECT 
+              id,
+              full_name as fullName,
+              email,
+              role,
+              sector,
+              created_at as createdAt,
+              updated_at as updatedAt
+            FROM users
+            ORDER BY full_name;
+          `;
 
-  async updateUser(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const userData = req.body;
-      const user = await adminService.updateUser(id, userData);
-      return res.json(user);
-    } catch (error) {
-      console.error('Erro ao atualizar usuário:', error);
-      return res.status(500).json({ error: 'Erro ao atualizar usuário' });
-    }
-  },
+            console.log('Executando query:', sqlQuery);
 
-  async deleteUser(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      await adminService.deleteUser(id);
-      return res.status(204).send();
-    } catch (error) {
-      console.error('Erro ao deletar usuário:', error);
-      return res.status(500).json({ error: 'Erro ao deletar usuário' });
-    }
-  },
+            const result = await query(sqlQuery);
+            console.log('Resultado da query:', result);
 
-  async updateUserStatus(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-      const user = await adminService.updateUserStatus(id, status);
-      return res.json(user);
-    } catch (error) {
-      console.error('Erro ao atualizar status do usuário:', error);
-      return res.status(500).json({ error: 'Erro ao atualizar status do usuário' });
-    }
-  },
+            // Se não houver usuários, retornar array vazio
+            if (!result || !Array.isArray(result)) {
+                console.log('Nenhum usuário encontrado ou resultado inválido');
+                return res.json([]);
+            }
 
-  async updateUserRole(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const { role } = req.body;
-      const user = await adminService.updateUserRole(id, role);
-      return res.json(user);
-    } catch (error) {
-      console.error('Erro ao atualizar função do usuário:', error);
-      return res.status(500).json({ error: 'Erro ao atualizar função do usuário' });
-    }
-  },
+            const users = result.map(user => ({
+                id: user.id,
+                fullName: user.fullName,
+                email: user.email,
+                role: user.role,
+                sector: user.sector,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            }));
 
-  async listSectors(req: Request, res: Response) {
-    try {
-      const sectors = await adminService.listSectors();
-      return res.json(sectors);
-    } catch (error) {
-      console.error('Erro ao listar setores:', error);
-      return res.status(500).json({ error: 'Erro ao listar setores' });
-    }
-  },
+            console.log('Usuários processados:', users);
+            return res.json(users);
 
-  async createSector(req: Request, res: Response) {
-    try {
-      const sectorData = req.body;
-      const sector = await adminService.createSector(sectorData);
-      return res.status(201).json(sector);
-    } catch (error) {
-      console.error('Erro ao criar setor:', error);
-      return res.status(500).json({ error: 'Erro ao criar setor' });
-    }
-  },
+        } catch (error) {
+            console.error('Erro detalhado ao listar usuários:', error);
+            return res.status(500).json({
+                error: 'Erro ao listar usuários',
+                details: error instanceof Error ? error.message : 'Erro desconhecido'
+            });
+        }
+    },
 
-  async updateSector(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const sectorData = req.body;
-      const sector = await adminService.updateSector(id, sectorData);
-      return res.json(sector);
-    } catch (error) {
-      console.error('Erro ao atualizar setor:', error);
-      return res.status(500).json({ error: 'Erro ao atualizar setor' });
-    }
-  },
+    async createUser(req: Request, res: Response) {
+        try {
+            // Implementar criação de usuário
+            return res.status(501).json({ error: 'Não implementado' });
+        } catch (error) {
+            console.error('Erro ao criar usuário:', error);
+            return res.status(500).json({ error: 'Erro ao criar usuário' });
+        }
+    },
 
-  async deleteSector(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      await adminService.deleteSector(id);
-      return res.status(204).send();
-    } catch (error) {
-      console.error('Erro ao deletar setor:', error);
-      return res.status(500).json({ error: 'Erro ao deletar setor' });
+    async updateUser(req: Request, res: Response) {
+        try {
+            // Implementar atualização de usuário
+            return res.status(501).json({ error: 'Não implementado' });
+        } catch (error) {
+            console.error('Erro ao atualizar usuário:', error);
+            return res.status(500).json({ error: 'Erro ao atualizar usuário' });
+        }
+    },
+
+    async deleteUser(req: Request, res: Response) {
+        try {
+            // Implementar deleção de usuário
+            return res.status(501).json({ error: 'Não implementado' });
+        } catch (error) {
+            console.error('Erro ao deletar usuário:', error);
+            return res.status(500).json({ error: 'Erro ao deletar usuário' });
+        }
+    },
+
+    async updateUserStatus(req: Request, res: Response) {
+        try {
+            // Implementar atualização de status do usuário
+            return res.status(501).json({ error: 'Não implementado' });
+        } catch (error) {
+            console.error('Erro ao atualizar status do usuário:', error);
+            return res.status(500).json({ error: 'Erro ao atualizar status do usuário' });
+        }
+    },
+
+    async updateUserRole(req: Request, res: Response) {
+        try {
+            // Implementar atualização de role do usuário
+            return res.status(501).json({ error: 'Não implementado' });
+        } catch (error) {
+            console.error('Erro ao atualizar role do usuário:', error);
+            return res.status(500).json({ error: 'Erro ao atualizar role do usuário' });
+        }
+    },
+
+    async listSectors(req: Request, res: Response) {
+        try {
+            // Implementar listagem de setores
+            return res.status(501).json({ error: 'Não implementado' });
+        } catch (error) {
+            console.error('Erro ao listar setores:', error);
+            return res.status(500).json({ error: 'Erro ao listar setores' });
+        }
+    },
+
+    async createSector(req: Request, res: Response) {
+        try {
+            // Implementar criação de setor
+            return res.status(501).json({ error: 'Não implementado' });
+        } catch (error) {
+            console.error('Erro ao criar setor:', error);
+            return res.status(500).json({ error: 'Erro ao criar setor' });
+        }
+    },
+
+    async updateSector(req: Request, res: Response) {
+        try {
+            // Implementar atualização de setor
+            return res.status(501).json({ error: 'Não implementado' });
+        } catch (error) {
+            console.error('Erro ao atualizar setor:', error);
+            return res.status(500).json({ error: 'Erro ao atualizar setor' });
+        }
+    },
+
+    async deleteSector(req: Request, res: Response) {
+        try {
+            // Implementar deleção de setor
+            return res.status(501).json({ error: 'Não implementado' });
+        } catch (error) {
+            console.error('Erro ao deletar setor:', error);
+            return res.status(500).json({ error: 'Erro ao deletar setor' });
+        }
     }
-  }
 };

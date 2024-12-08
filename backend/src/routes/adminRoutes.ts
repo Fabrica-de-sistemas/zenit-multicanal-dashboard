@@ -1,5 +1,5 @@
 // backend/src/routes/adminRoutes.ts
-import express, { Request, Response, NextFunction, Router } from 'express';
+import express, { Router, Request, Response, NextFunction } from 'express';
 import { adminController } from '../controllers/adminController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { adminMiddleware } from '../middleware/adminMiddleware';
@@ -41,9 +41,17 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Rotas de usuários
-router.get('/users', asyncHandler(async (req, res) => {
-  await adminController.listUsers(req, res);
-}));
+router.get('/users', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    console.log('Rota GET /users acessada');
+    console.log('Request headers:', req.headers);
+
+    await adminController.listUsers(req, res);
+  } catch (error) {
+    console.error('Erro na rota /users:', error);
+    next(error);
+  }
+});
 
 router.post('/users', asyncHandler(async (req, res) => {
   await adminController.createUser(req, res);

@@ -1,5 +1,4 @@
-// frontend/components/admin/AdminSettings.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { User } from 'lucide-react';
 import { Building2 } from 'lucide-react';
@@ -11,24 +10,44 @@ import { Trash } from 'lucide-react';
 import { UserPlus } from 'lucide-react';
 import { Plus } from 'lucide-react';
 import { UserCreateModal } from './UserCreateModal';
+import { adminService } from '@/services/adminService';
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('users');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // Dados mockados para exemplo
-  const users = [
-    { id: 1, name: 'João Silva', email: 'joao@empresa.com', role: 'OPERATOR', sector: 'Desenvolvimento', status: 'active' },
-    { id: 2, name: 'Maria Santos', email: 'maria@empresa.com', role: 'ADMIN', sector: 'Gerência', status: 'active' },
-    // Adicione mais usuários conforme necessário
-  ];
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await adminService.getUsers();
+      setUsers(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar usuários';
+      setError(errorMessage);
+      // Log mais descritivo
+      console.error('Erro ao buscar usuários:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleUserCreationSuccess = () => {
+    fetchUsers();
+    setIsCreateModalOpen(false);
+  };
 
   const sectors = [
     { id: 1, name: 'Desenvolvimento', totalUsers: 15 },
     { id: 2, name: 'Design', totalUsers: 8 },
     { id: 3, name: 'Marketing', totalUsers: 12 },
-    // Adicione mais setores conforme necessário
   ];
 
   const renderContent = () => {
@@ -61,66 +80,72 @@ const AdminSettings = () => {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Função</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Setor</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-medium">
-                              {user.name.charAt(0)}
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{user.email}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'
-                          }`}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {user.sector}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {user.status === 'active' ? 'Ativo' : 'Inativo'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex justify-end gap-2">
-                            <button className="text-blue-600 hover:text-blue-900">
-                              <Edit size={18} />
-                            </button>
-                            <button className="text-red-600 hover:text-red-900">
-                              <Trash size={18} />
-                            </button>
-                          </div>
-                        </td>
+              {loading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="text-gray-500">Carregando usuários...</div>
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="text-red-500">{error}</div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Setor</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {users.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-medium">
+                                {user.fullName.charAt(0)}
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{user.email}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                              {user.role}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {user.sector}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex justify-end gap-2">
+                              <button className="text-blue-600 hover:text-blue-900">
+                                <Edit size={18} />
+                              </button>
+                              <button className="text-red-600 hover:text-red-900">
+                                <Trash size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {users.length === 0 && !loading && !error && (
+                    <div className="text-center py-8 text-gray-500">
+                      Nenhum usuário encontrado
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         );
@@ -169,7 +194,6 @@ const AdminSettings = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
-        {/* Sidebar de navegação */}
         <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
           <div className="p-6">
             <h1 className="text-xl font-bold text-gray-800">Configurações</h1>
@@ -239,20 +263,15 @@ const AdminSettings = () => {
           </nav>
         </div>
 
-        {/* Conteúdo principal */}
         <div className="flex-1 p-8">
           {renderContent()}
         </div>
       </div>
 
-      {/* Modal de criação de usuário */}
       <UserCreateModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => {
-          // Aqui você pode adicionar a lógica para recarregar a lista de usuários
-          setIsCreateModalOpen(false);
-        }}
+        onSuccess={handleUserCreationSuccess}
       />
     </div>
   );
