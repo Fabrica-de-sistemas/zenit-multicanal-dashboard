@@ -41,16 +41,24 @@ export const OnlineUsersList: React.FC<OnlineUsersListProps> = ({
   onStartPrivateChat,
   currentUserId
 }) => {
+  // Ordenar usuários: usuário atual primeiro, depois os outros em ordem alfabética
+  const sortedUsers = [...users].sort((a, b) => {
+    if (a.id === currentUserId) return -1;
+    if (b.id === currentUserId) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <div className="p-4 space-y-4">
       <div className="text-sm font-medium text-slate-400 px-2">
         Colaboradores Online ({users.length})
       </div>
       <div className="space-y-2">
-        {users.map((user) => (
+        {sortedUsers.map((user) => (
           <div
             key={user.id}
-            className="flex items-center space-x-3 p-2.5 rounded-xl hover:bg-slate-50 transition-all duration-200"
+            className={`flex items-center space-x-3 p-2.5 rounded-xl hover:bg-slate-50 transition-all duration-200 ${user.id === currentUserId ? 'bg-slate-50' : ''
+              }`}
           >
             <div className="relative">
               <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-medium">
@@ -68,7 +76,6 @@ export const OnlineUsersList: React.FC<OnlineUsersListProps> = ({
                 {user.sector} • {user.role}
               </p>
             </div>
-            {/* Só mostra o botão de chat se não for o próprio usuário */}
             {user.id !== currentUserId && (
               <button
                 onClick={() => onStartPrivateChat(user.id, user.name)}
