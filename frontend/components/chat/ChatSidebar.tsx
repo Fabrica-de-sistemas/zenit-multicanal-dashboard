@@ -1,4 +1,3 @@
-// frontend/src/components/chat/ChatSidebar.tsx
 import React, { useState, useEffect } from 'react';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,23 +21,49 @@ export const ChatSidebar = () => {
     const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
     const [privateChats, setPrivateChats] = useState<PrivateChatState[]>([]);
 
+    // Efeito para carregar o status inicial
+    useEffect(() => {
+        if (user?.id) {
+            const savedStatus = localStorage.getItem(`userStatus_${user.id}`);
+            if (savedStatus && Object.keys(statusConfig).includes(savedStatus)) {
+                setCurrentStatus(savedStatus as keyof typeof statusConfig);
+            }
+        }
+    }, [user]);
+
+    // Efeito para gerenciar conexões e atualizações de status
     useEffect(() => {
         if (!socket || !user) return;
 
+        // Função para emitir o status atual
         const emitUserConnected = () => {
+            const currentSavedStatus = localStorage.getItem(`userStatus_${user.id}`) as keyof typeof statusConfig || currentStatus;
+            
             socket.emit('userConnected', {
                 id: user.id,
                 name: user.fullName,
                 role: user.role,
                 sector: user.sector || 'Geral',
-                status: currentStatus
+                status: currentSavedStatus
             });
+
+            // Atualiza o estado local para refletir o status salvo
+            setCurrentStatus(currentSavedStatus);
         };
 
+        // Conecta com o status correto
         emitUserConnected();
 
+        // Atualiza a lista de usuários online quando receber atualizações
         socket.on('onlineUsers', (users: OnlineUser[]) => {
             setOnlineUsers(users);
+            
+            // Atualiza o status local se encontrar o usuário atual na lista
+            const currentUser = users.find(u => u.id === user.id);
+            if (currentUser) {
+                setCurrentStatus(currentUser.status);
+                localStorage.setItem(`userStatus_${user.id}`, currentUser.status);
+            }
         });
 
         socket.on('newPrivateMessage', (message) => {
@@ -47,8 +72,8 @@ export const ChatSidebar = () => {
                     const existingChat = prev.find(chat => chat.userId === message.userId);
                     if (existingChat) {
                         if (existingChat.isMinimized) {
-                            return prev.map(chat =>
-                                chat.userId === message.userId
+                            return prev.map(chat => 
+                                chat.userId === message.userId 
                                     ? { ...chat, hasNewMessage: true }
                                     : chat
                             );
@@ -73,12 +98,12 @@ export const ChatSidebar = () => {
 
     const handleStartPrivateChat = (targetUserId: string, targetUserName: string) => {
         if (!user || !socket) return;
-
+        
         setPrivateChats(prev => {
             const existingChat = prev.find(chat => chat.userId === targetUserId);
             if (existingChat) {
-                return prev.map(chat =>
-                    chat.userId === targetUserId
+                return prev.map(chat => 
+                    chat.userId === targetUserId 
                         ? { ...chat, isMinimized: false, hasNewMessage: false }
                         : chat
                 );
@@ -90,6 +115,24 @@ export const ChatSidebar = () => {
                 hasNewMessage: false
             }];
         });
+    };
+
+    const handleStatusChange = (status: keyof typeof statusConfig) => {
+        if (!user?.id) return;
+
+        // Atualiza o estado local
+        setCurrentStatus(status);
+
+        // Persiste no localStorage
+        localStorage.setItem(`userStatus_${user.id}`, status);
+
+        // Envia para o servidor
+        if (socket) {
+            socket.emit('updateStatus', {
+                userId: user.id,
+                status
+            });
+        }
     };
 
     const handleMinimizeChat = (targetUserId: string) => {
@@ -132,33 +175,25 @@ export const ChatSidebar = () => {
                             </p>
                         </div>
                     </div>
-                    <UserStatusSelector
+                    <UserStatusSelector 
                         currentStatus={currentStatus}
-                        onStatusChange={(status) => {
-                            setCurrentStatus(status);
-                            if (socket) {
-                                socket.emit('updateStatus', {
-                                    userId: user.id,
-                                    status
-                                });
-                            }
-                        }}
+                        onStatusChange={handleStatusChange}
                     />
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    <OnlineUsersList
-                        users={onlineUsers}
+                    <OnlineUsersList 
+                        users={onlineUsers} 
                         onStartPrivateChat={handleStartPrivateChat}
-                        currentUserId={user.id} // Passando o ID do usuário atual
+                        currentUserId={user.id}
                     />
                 </div>
             </div>
 
             <div className="fixed bottom-0 right-0 flex flex-row-reverse gap-4 p-4 z-50">
                 {privateChats.map((chat, index) => (
-                    <div
-                        key={chat.userId}
-                        style={{
+                    <div 
+                        key={chat.userId} 
+                        style={{ 
                             right: `${(index * 288) + 16}px`
                         }}
                         className="absolute bottom-0"

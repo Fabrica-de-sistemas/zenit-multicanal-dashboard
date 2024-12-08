@@ -121,7 +121,16 @@ class CompanyChatService extends EventEmitter {
     }
 
     public addOnlineUser(user: OnlineUser): void {
-        this.onlineUsers.set(user.id, user);
+        const existingUser = this.onlineUsers.get(user.id);
+        if (existingUser) {
+            // Mantém o status existente se não for fornecido um novo
+            this.onlineUsers.set(user.id, {
+                ...user,
+                status: user.status || existingUser.status
+            });
+        } else {
+            this.onlineUsers.set(user.id, user);
+        }
         if (user.socketId) {
             this.userSockets.set(user.id, user.socketId);
         }
