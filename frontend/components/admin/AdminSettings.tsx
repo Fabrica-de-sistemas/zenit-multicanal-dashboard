@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { User } from 'lucide-react';
-import { Building2 } from 'lucide-react';
 import { Shield } from 'lucide-react';
 import { BarChart } from 'lucide-react';
 import { Settings } from 'lucide-react';
@@ -23,6 +22,7 @@ const AdminSettings = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedSectorFilter, setSelectedSectorFilter] = useState<string>('all');
 
   const fetchUsers = async () => {
     try {
@@ -36,6 +36,17 @@ const AdminSettings = () => {
       setLoading(false);
     }
   };
+
+  const filteredUsers = users.filter(user => {
+    // Primeiro aplica o filtro de busca por texto
+    const matchesSearch = user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Depois aplica o filtro de setor
+    const matchesSector = selectedSectorFilter === 'all' || user.sector === selectedSectorFilter;
+
+    return matchesSearch && matchesSector;
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -65,7 +76,7 @@ const AdminSettings = () => {
           throw new Error('Erro ao excluir usuário');
         }
 
-        fetchUsers(); // Recarrega a lista de usuários
+        fetchUsers();
       } catch (err) {
         console.error('Erro ao excluir usuário:', err);
         setError('Erro ao excluir usuário');
@@ -96,8 +107,8 @@ const AdminSettings = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="p-4 border-b border-gray-200">
-                <div className="relative">
+              <div className="flex justify-between items-center p-4 border-b border-gray-200">
+                <div className="relative flex-1 mr-4">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type="text"
@@ -107,6 +118,21 @@ const AdminSettings = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
+                <select
+                  value={selectedSectorFilter}
+                  onChange={(e) => setSelectedSectorFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                >
+                  <option value="all">Todos os Setores</option>
+                  <option value="Desenvolvimento">Desenvolvimento</option>
+                  <option value="Design">Design</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="RH">RH</option>
+                  <option value="Financeiro">Financeiro</option>
+                  <option value="Comercial">Comercial</option>
+                  <option value="Suporte">Suporte</option>
+                  <option value="Geral">Geral</option>
+                </select>
               </div>
 
               {loading ? (
@@ -130,7 +156,7 @@ const AdminSettings = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {users.map((user) => (
+                      {filteredUsers.map((user) => (
                         <tr key={user.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -174,9 +200,11 @@ const AdminSettings = () => {
                     </tbody>
                   </table>
 
-                  {users.length === 0 && !loading && !error && (
+                  {filteredUsers.length === 0 && !loading && !error && (
                     <div className="text-center py-8 text-gray-500">
-                      Nenhum usuário encontrado
+                      {searchTerm || selectedSectorFilter !== 'all'
+                        ? 'Nenhum usuário encontrado com os filtros atuais'
+                        : 'Nenhum usuário cadastrado'}
                     </div>
                   )}
                 </div>
@@ -239,30 +267,18 @@ const AdminSettings = () => {
             <button
               onClick={() => setActiveTab('users')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'users'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-600 hover:bg-gray-50'
+                ? 'bg-indigo-50 text-indigo-600'
+                : 'text-gray-600 hover:bg-gray-50'
                 }`}
             >
               <User size={20} />
               <span>Usuários</span>
             </button>
-
-            <button
-              onClick={() => setActiveTab('sectors')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'sectors'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-                }`}
-            >
-              <Building2 size={20} />
-              <span>Setores</span>
-            </button>
-
             <button
               onClick={() => setActiveTab('permissions')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'permissions'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-600 hover:bg-gray-50'
+                ? 'bg-indigo-50 text-indigo-600'
+                : 'text-gray-600 hover:bg-gray-50'
                 }`}
             >
               <Shield size={20} />
@@ -272,8 +288,8 @@ const AdminSettings = () => {
             <button
               onClick={() => setActiveTab('analytics')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'analytics'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-600 hover:bg-gray-50'
+                ? 'bg-indigo-50 text-indigo-600'
+                : 'text-gray-600 hover:bg-gray-50'
                 }`}
             >
               <BarChart size={20} />
@@ -283,8 +299,8 @@ const AdminSettings = () => {
             <button
               onClick={() => setActiveTab('system')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'system'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-600 hover:bg-gray-50'
+                ? 'bg-indigo-50 text-indigo-600'
+                : 'text-gray-600 hover:bg-gray-50'
                 }`}
             >
               <Settings size={20} />

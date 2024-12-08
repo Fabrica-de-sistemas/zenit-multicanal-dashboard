@@ -73,21 +73,4 @@ router.put('/users/:id/role', asyncHandler(async (req, res) => {
   await adminController.updateUserRole(req, res);
 }));
 
-// Rotas de setores
-router.get('/sectors', asyncHandler(async (req, res) => {
-  await adminController.listSectors(req, res);
-}));
-
-router.post('/sectors', asyncHandler(async (req, res) => {
-  await adminController.createSector(req, res);
-}));
-
-router.put('/sectors/:id', asyncHandler(async (req, res) => {
-  await adminController.updateSector(req, res);
-}));
-
-router.delete('/sectors/:id', asyncHandler(async (req, res) => {
-  await adminController.deleteSector(req, res);
-}));
-
 export default router;

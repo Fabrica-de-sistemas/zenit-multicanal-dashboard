@@ -149,41 +149,68 @@ export const adminController = {
 
     async listSectors(req: Request, res: Response) {
         try {
-            // Implementar listagem de setores
-            return res.status(501).json({ error: 'Não implementado' });
+            console.log('Iniciando listagem de setores...');
+
+            // Primeiro, buscar os setores
+            const sectorsQuery = `
+            SELECT 
+              s.id,
+              s.name,
+              COALESCE(u.user_count, 0) as totalUsers,
+              GROUP_CONCAT(r.name) as roles
+            FROM sectors s
+            LEFT JOIN (
+              SELECT sector_id, COUNT(*) as user_count
+              FROM users
+              GROUP BY sector_id
+            ) u ON s.id = u.sector_id
+            LEFT JOIN roles r ON r.sector_id = s.id
+            GROUP BY s.id, s.name
+            ORDER BY s.name
+          `;
+
+            console.log('Executando query:', sectorsQuery);
+            const sectors = await query(sectorsQuery);
+
+            console.log('Setores encontrados:', sectors);
+            return res.json(sectors);
+
         } catch (error) {
-            console.error('Erro ao listar setores:', error);
-            return res.status(500).json({ error: 'Erro ao listar setores' });
+            console.error('Erro detalhado ao listar setores:', error);
+            return res.status(500).json({
+                error: 'Erro ao listar setores',
+                details: error instanceof Error ? error.message : 'Erro desconhecido'
+            });
         }
     },
-
-    async createSector(req: Request, res: Response) {
+    async getSectorRoles(req: Request, res: Response) {
         try {
-            // Implementar criação de setor
-            return res.status(501).json({ error: 'Não implementado' });
+            const sectors = await query(`
+            SELECT 
+              s.id as sectorId,
+              s.name as sectorName,
+              r.id as roleId,
+              r.name as roleName
+            FROM sectors s
+            LEFT JOIN roles r ON r.sector_id = s.id
+            ORDER BY s.name, r.name
+          `);
+
+            // Formatar os dados para o formato esperado pelo frontend
+            const formattedSectors: { [key: string]: string[] } = {};
+            sectors.forEach((row: any) => {
+                if (!formattedSectors[row.sectorName]) {
+                    formattedSectors[row.sectorName] = [];
+                }
+                if (row.roleName) {
+                    formattedSectors[row.sectorName].push(row.roleName);
+                }
+            });
+
+            return res.json(formattedSectors);
         } catch (error) {
-            console.error('Erro ao criar setor:', error);
-            return res.status(500).json({ error: 'Erro ao criar setor' });
+            console.error('Erro ao buscar cargos dos setores:', error);
+            return res.status(500).json({ error: 'Erro ao buscar cargos dos setores' });
         }
     },
-
-    async updateSector(req: Request, res: Response) {
-        try {
-            // Implementar atualização de setor
-            return res.status(501).json({ error: 'Não implementado' });
-        } catch (error) {
-            console.error('Erro ao atualizar setor:', error);
-            return res.status(500).json({ error: 'Erro ao atualizar setor' });
-        }
-    },
-
-    async deleteSector(req: Request, res: Response) {
-        try {
-            // Implementar deleção de setor
-            return res.status(501).json({ error: 'Não implementado' });
-        } catch (error) {
-            console.error('Erro ao deletar setor:', error);
-            return res.status(500).json({ error: 'Erro ao deletar setor' });
-        }
-    }
-};
+}
