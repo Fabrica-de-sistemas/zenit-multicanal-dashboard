@@ -1,3 +1,4 @@
+//frontend/types/auth.ts
 export interface AuthResponse {
   user: User;
   token: string;

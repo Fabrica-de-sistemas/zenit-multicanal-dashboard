@@ -1,3 +1,17 @@
-2024/12/01-23:08:31.542 af03 Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
-2024/12/01-23:08:31.542 af03 Recovering log #26
-2024/12/01-23:08:31.543 af03 Reusing old log /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/000026.log 
+2024/12/07-20:17:39.845 8203 Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2024/12/07-20:17:39.846 8203 Recovering log #26
+2024/12/07-20:17:39.846 8203 Level-0 table #29: started
+2024/12/07-20:17:39.849 8203 Level-0 table #29: 10783 bytes OK
+2024/12/07-20:17:39.849 8203 Recovering log #29
+2024/12/07-20:17:39.849 8203 Reusing old log /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/000029.log 
+2024/12/07-20:17:39.855 8203 Delete type=2 #31
+2024/12/07-20:17:39.855 8203 Delete type=0 #26
+2024/12/07-20:17:39.857 b103 Compacting 4@0 + 1@1 files
+2024/12/07-20:17:39.861 b103 Generated table #30@0: 145 keys, 4894 bytes
+2024/12/07-20:17:39.861 b103 Compacted 4@0 + 1@1 files => 4894 bytes
+2024/12/07-20:17:39.865 b103 compacted to: files[ 0 1 1 0 0 0 0 ]
+2024/12/07-20:17:39.865 b103 Delete type=2 #29
+2024/12/07-20:17:39.865 b103 Delete type=2 #21
+2024/12/07-20:17:39.866 b103 Delete type=2 #27
+2024/12/07-20:17:39.866 b103 Delete type=2 #18
+2024/12/07-20:17:39.866 b103 Delete type=2 #24

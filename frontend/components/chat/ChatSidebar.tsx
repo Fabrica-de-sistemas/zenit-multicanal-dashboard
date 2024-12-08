@@ -1,6 +1,4 @@
 // frontend/src/components/chat/ChatSidebar.tsx
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,10 +9,10 @@ import { statusConfig } from '@/config/statusConfig';
 import { PrivateChat } from './PrivateChat';
 
 interface PrivateChatState {
-  userId: string;
-  userName: string;
-  isMinimized: boolean;
-  hasNewMessage: boolean;
+    userId: string;
+    userName: string;
+    isMinimized: boolean;
+    hasNewMessage: boolean;
 }
 
 export const ChatSidebar = () => {
@@ -57,7 +55,6 @@ export const ChatSidebar = () => {
                         }
                         return prev;
                     }
-                    // Se não existir chat, cria um novo
                     return [...prev, {
                         userId: message.userId,
                         userName: message.userName,
@@ -95,18 +92,25 @@ export const ChatSidebar = () => {
         });
     };
 
-    const handleMinimizeChat = (userId: string) => {
-        setPrivateChats(prev => 
-            prev.map(chat => 
-                chat.userId === userId 
-                    ? { ...chat, isMinimized: !chat.isMinimized, hasNewMessage: false }
-                    : chat
-            )
-        );
+    const handleMinimizeChat = (targetUserId: string) => {
+        setPrivateChats(prev => {
+            return prev.map(chat => {
+                if (chat.userId === targetUserId) {
+                    console.log(`Minimizando chat com ${chat.userName}. Estado anterior: ${chat.isMinimized}`);
+                    return {
+                        ...chat,
+                        isMinimized: !chat.isMinimized,
+                        hasNewMessage: false
+                    };
+                }
+                return chat;
+            });
+        });
     };
 
-    const handleCloseChat = (userId: string) => {
-        setPrivateChats(prev => prev.filter(chat => chat.userId !== userId));
+    const handleCloseChat = (targetUserId: string) => {
+        console.log('Fechando chat:', targetUserId);
+        setPrivateChats(prev => prev.filter(chat => chat.userId !== targetUserId));
     };
 
     if (!user || !socket) return null;
@@ -149,20 +153,28 @@ export const ChatSidebar = () => {
                 </div>
             </div>
 
-            {/* Chats privados */}
-            {privateChats.map((chat) => (
-                <PrivateChat
-                    key={chat.userId}
-                    fromUserId={user.id}
-                    fromUserName={user.fullName}
-                    toUserId={chat.userId}
-                    toUserName={chat.userName}
-                    onClose={() => handleCloseChat(chat.userId)}
-                    onMinimize={() => handleMinimizeChat(chat.userId)}
-                    isMinimized={chat.isMinimized}
-                    hasNewMessage={chat.hasNewMessage}
-                />
-            ))}
+            <div className="fixed bottom-0 right-0 flex flex-row-reverse gap-4 p-4 z-50">
+                {privateChats.map((chat, index) => (
+                    <div 
+                        key={chat.userId} 
+                        style={{ 
+                            right: `${(index * 288) + 16}px`
+                        }}
+                        className="absolute bottom-0"
+                    >
+                        <PrivateChat
+                            fromUserId={user.id}
+                            fromUserName={user.fullName}
+                            toUserId={chat.userId}
+                            toUserName={chat.userName}
+                            onClose={() => handleCloseChat(chat.userId)}
+                            onMinimize={() => handleMinimizeChat(chat.userId)}
+                            isMinimized={chat.isMinimized}
+                            hasNewMessage={chat.hasNewMessage}
+                        />
+                    </div>
+                ))}
+            </div>
         </>
     );
 };

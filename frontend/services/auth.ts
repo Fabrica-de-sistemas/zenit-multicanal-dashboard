@@ -1,3 +1,4 @@
+//frontend/services/auth.ts
 import axios from 'axios';
 import { RegisterData, LoginData, AuthResponse } from '@/types/auth';
 

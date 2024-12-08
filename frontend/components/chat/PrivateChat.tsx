@@ -1,6 +1,4 @@
 // frontend/src/components/chat/PrivateChat.tsx
-'use client';
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/hooks/useSocket';
 import { Send, Minus, X, Paperclip } from 'lucide-react';
@@ -147,12 +145,15 @@ export const PrivateChat: React.FC<PrivateChatProps> = ({
 
     if (isMinimized) {
         return (
-            <div
-                className={`fixed bottom-0 right-4 w-72 bg-white rounded-t-lg shadow-xl border border-gray-200 cursor-pointer 
-                   ${hasNewMessage ? 'animate-bounce' : ''}`}
-                onClick={onMinimize}
-            >
-                <div className="p-3 flex justify-between items-center bg-gray-50 rounded-t-lg">
+            <div className="w-72 bg-white rounded-t-lg shadow-xl border border-gray-200 cursor-pointer">
+                <div
+                    className="p-3 flex justify-between items-center bg-gray-50 rounded-t-lg"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onMinimize?.();
+                    }}
+                >
                     <div className="flex items-center space-x-2">
                         <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
                             {toUserName.charAt(0)}
@@ -162,25 +163,23 @@ export const PrivateChat: React.FC<PrivateChatProps> = ({
                             {hasNewMessage && <span className="ml-2 text-red-500">•</span>}
                         </span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onClose();
-                            }}
-                            className="text-gray-400 hover:text-gray-600"
-                        >
-                            <X size={18} />
-                        </button>
-                    </div>
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onClose();
+                        }}
+                        className="text-gray-400 hover:text-gray-600"
+                    >
+                        <X size={18} />
+                    </button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="fixed bottom-0 right-4 w-80 bg-white rounded-t-lg shadow-xl flex flex-col border border-gray-200 h-96 z-50">
-            {/* Header */}
+        <div className="w-80 bg-white rounded-t-lg shadow-xl flex flex-col border border-gray-200 h-96">
             <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
                 <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -192,7 +191,7 @@ export const PrivateChat: React.FC<PrivateChatProps> = ({
                 </div>
                 <div className="flex items-center space-x-2">
                     <button
-                        onClick={onMinimize}
+                        onClick={() => onMinimize?.()}
                         className="text-gray-400 hover:text-gray-600"
                     >
                         <Minus size={18} />
@@ -206,7 +205,6 @@ export const PrivateChat: React.FC<PrivateChatProps> = ({
                 </div>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((message) => (
                     <div
@@ -214,10 +212,11 @@ export const PrivateChat: React.FC<PrivateChatProps> = ({
                         className={`flex ${message.userId === fromUserId ? 'justify-end' : 'justify-start'}`}
                     >
                         <div
-                            className={`max-w-[80%] p-3 rounded-lg ${message.userId === fromUserId
+                            className={`max-w-[80%] p-3 rounded-lg ${
+                                message.userId === fromUserId
                                     ? 'bg-emerald-100 text-gray-800'
                                     : 'bg-gray-100 text-gray-800'
-                                }`}
+                            }`}
                         >
                             {message.fileUrl ? (
                                 <div className="mb-1">
@@ -232,8 +231,7 @@ export const PrivateChat: React.FC<PrivateChatProps> = ({
                                             href={message.fileUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex items-center space-x-2 hover:underline text-current"
-                                        >
+                                            className="flex items-center space-x-2 hover:underline text-current">
                                             <Paperclip size={16} />
                                             <span>{message.fileName}</span>
                                         </a>
@@ -253,8 +251,7 @@ export const PrivateChat: React.FC<PrivateChatProps> = ({
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="p-3 border-t border-gray-200">
+            <div className="p-3 border-t border-gray-200 bg-white">
                 <div className="flex space-x-2">
                     <input
                         type="file"
@@ -280,7 +277,7 @@ export const PrivateChat: React.FC<PrivateChatProps> = ({
                     />
                     <button
                         onClick={handleSendMessage}
-                        className="p-2 bg-emerald-500 text-gray-600 rounded-lg"
+                        className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
                     >
                         <Send size={18} />
                     </button>

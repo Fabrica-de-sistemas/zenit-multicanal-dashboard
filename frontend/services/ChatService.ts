@@ -1,4 +1,4 @@
-// backend/src/services/ChatService.ts
+// frontend/services/ChatService.ts
 
 import { EventEmitter } from 'events';
 import { CompanyMessage } from '../types/chatTypes';
