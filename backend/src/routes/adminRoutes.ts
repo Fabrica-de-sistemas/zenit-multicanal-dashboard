@@ -1,0 +1,85 @@
+// backend/src/routes/adminRoutes.ts
+import express, { Request, Response, NextFunction, Router } from 'express';
+import { adminController } from '../controllers/adminController';
+import { authMiddleware } from '../middleware/authMiddleware';
+import { adminMiddleware } from '../middleware/adminMiddleware';
+
+const router: Router = express.Router();
+
+type AsyncRequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => Promise<void>;
+
+// Wrapper function para converter handlers async para o formato esperado
+const asyncHandler = (handler: AsyncRequestHandler) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await handler(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
+// Middlewares
+router.use(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await authMiddleware(req as any, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.use(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await adminMiddleware(req as any, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Rotas de usuários
+router.get('/users', asyncHandler(async (req, res) => {
+  await adminController.listUsers(req, res);
+}));
+
+router.post('/users', asyncHandler(async (req, res) => {
+  await adminController.createUser(req, res);
+}));
+
+router.put('/users/:id', asyncHandler(async (req, res) => {
+  await adminController.updateUser(req, res);
+}));
+
+router.delete('/users/:id', asyncHandler(async (req, res) => {
+  await adminController.deleteUser(req, res);
+}));
+
+router.put('/users/:id/status', asyncHandler(async (req, res) => {
+  await adminController.updateUserStatus(req, res);
+}));
+
+router.put('/users/:id/role', asyncHandler(async (req, res) => {
+  await adminController.updateUserRole(req, res);
+}));
+
+// Rotas de setores
+router.get('/sectors', asyncHandler(async (req, res) => {
+  await adminController.listSectors(req, res);
+}));
+
+router.post('/sectors', asyncHandler(async (req, res) => {
+  await adminController.createSector(req, res);
+}));
+
+router.put('/sectors/:id', asyncHandler(async (req, res) => {
+  await adminController.updateSector(req, res);
+}));
+
+router.delete('/sectors/:id', asyncHandler(async (req, res) => {
+  await adminController.deleteSector(req, res);
+}));
+
+export default router;

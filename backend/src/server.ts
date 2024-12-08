@@ -8,6 +8,7 @@ import messageRoutes from './routes/messageRoutes';
 import WhatsAppService from './services/WhatsAppService';
 import CompanyChatService from './services/CompanyChatService';
 import uploadRoutes from './routes/uploadRoutes';
+import adminRoutes from './routes/adminRoutes';
 import path from 'path';
 
 const app = express();
@@ -55,6 +56,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api', uploadRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Inicialização dos serviços
 const whatsappService = WhatsAppService.getInstance();

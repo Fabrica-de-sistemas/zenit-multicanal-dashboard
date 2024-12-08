@@ -1,12 +1,17 @@
-// frontend/components/dashboard/Sidebar.tsx
+// frontend/src/components/dashboard/Sidebar.tsx
 'use client';
 
 import React from 'react';
 import { Bell, MessageSquare, Settings, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 export const Sidebar = () => {
   const router = useRouter();
+  const { user } = useAuth();
+
+  // Verifica se o usuário é administrador
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <div className="w-16 bg-gray-900 flex flex-col items-center py-6 space-y-8">
@@ -17,21 +22,32 @@ export const Sidebar = () => {
         <button 
           onClick={() => router.push('/dashboard')}
           className="p-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors"
+          title="Central de Atendimento"
         >
           <MessageSquare size={20} />
         </button>
         <button 
           onClick={() => router.push('/dashboard/company-chat')}
           className="p-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors"
+          title="Chat Interno"
         >
           <Users size={20} />
         </button>
-        <button className="p-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors">
+        <button 
+          className="p-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors"
+          title="Notificações"
+        >
           <Bell size={20} />
         </button>
-        <button className="p-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors">
-          <Settings size={20} />
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={() => router.push('/dashboard/settings')}
+            className="p-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors"
+            title="Configurações (Acesso Administrativo)"
+          >
+            <Settings size={20} />
+          </button>
+        )}
       </nav>
     </div>
   );
