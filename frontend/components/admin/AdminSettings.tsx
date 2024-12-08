@@ -1,3 +1,4 @@
+// frontend/components/admin/AdminSettings.tsx
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { User } from 'lucide-react';
@@ -9,21 +10,25 @@ import { Edit } from 'lucide-react';
 import { Trash } from 'lucide-react';
 import { UserPlus } from 'lucide-react';
 import { Plus } from 'lucide-react';
+import { UserCreateModal } from './UserCreateModal';
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('users');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Dados mockados para exemplo
   const users = [
     { id: 1, name: 'João Silva', email: 'joao@empresa.com', role: 'OPERATOR', sector: 'Desenvolvimento', status: 'active' },
     { id: 2, name: 'Maria Santos', email: 'maria@empresa.com', role: 'ADMIN', sector: 'Gerência', status: 'active' },
+    // Adicione mais usuários conforme necessário
   ];
 
   const sectors = [
     { id: 1, name: 'Desenvolvimento', totalUsers: 15 },
     { id: 2, name: 'Design', totalUsers: 8 },
     { id: 3, name: 'Marketing', totalUsers: 12 },
+    // Adicione mais setores conforme necessário
   ];
 
   const renderContent = () => {
@@ -33,7 +38,10 @@ const AdminSettings = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold text-gray-800">Gerenciar Usuários</h2>
-              <button className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
+              <button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+              >
                 <UserPlus size={20} />
                 <span>Adicionar Usuário</span>
               </button>
@@ -236,6 +244,16 @@ const AdminSettings = () => {
           {renderContent()}
         </div>
       </div>
+
+      {/* Modal de criação de usuário */}
+      <UserCreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          // Aqui você pode adicionar a lógica para recarregar a lista de usuários
+          setIsCreateModalOpen(false);
+        }}
+      />
     </div>
   );
 };

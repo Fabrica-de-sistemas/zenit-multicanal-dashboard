@@ -2,7 +2,7 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken'; // Correção aqui
 import { query, execute } from '../lib/db';
 import { authQueries } from '../database/queries/authQueries';
 
@@ -15,10 +15,10 @@ export const authController = {
         password: '[PROTEGIDO]'
       });
 
-      const { fullName, email, registration, password, sector = 'Geral' } = req.body;
+      const { fullName, email, registration, password, sector, role } = req.body;
 
       // Validação dos dados
-      if (!fullName || !email || !registration || !password) {
+      if (!fullName || !email || !registration || !password || !sector || !role) {
         console.log('Erro: Dados inválidos');
         return res.status(400).json({
           error: 'Todos os campos são obrigatórios'
@@ -50,17 +50,18 @@ export const authController = {
       try {
         console.log('Tentando criar usuário no banco...');
         const result = await execute(
-          authQueries.createUser,
-          [fullName, email, registration, hashedPassword, 'OPERATOR', sector]
+          `
+         INSERT INTO users (full_name, email, registration, password, role, sector)
+         VALUES (?, ?, ?, ?, ?, ?)
+         `,
+          [fullName, email, registration, hashedPassword, role, sector]
         );
 
         const userId = result.insertId;
         console.log('Usuário criado com sucesso. ID:', userId);
 
-        const users = await query(
-          authQueries.findById,
-          [userId]
-        );
+        console.log('Buscando usuário atualizado...');
+        const users = await query(authQueries.findById, [userId]);
 
         if (users.length === 0) {
           throw new Error('Erro ao recuperar usuário criado');
@@ -273,4 +274,4 @@ export const authController = {
       });
     }
   }
-}
+};
