@@ -1,3 +1,4 @@
+// frontend/components/admin/AdminSettings.tsx
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { User } from 'lucide-react';
@@ -10,12 +11,15 @@ import { Trash } from 'lucide-react';
 import { UserPlus } from 'lucide-react';
 import { Plus } from 'lucide-react';
 import { UserCreateModal } from './UserCreateModal';
+import { UserEditModal } from './UserEditModal';
 import { adminService } from '@/services/adminService';
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('users');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -26,10 +30,8 @@ const AdminSettings = () => {
       const data = await adminService.getUsers();
       setUsers(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar usuários';
-      setError(errorMessage);
-      // Log mais descritivo
-      console.error('Erro ao buscar usuários:', err);
+      setError('Erro ao carregar usuários');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -42,6 +44,33 @@ const AdminSettings = () => {
   const handleUserCreationSuccess = () => {
     fetchUsers();
     setIsCreateModalOpen(false);
+  };
+
+  const handleEdit = (user: any) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = async (userId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao excluir usuário');
+        }
+
+        fetchUsers(); // Recarrega a lista de usuários
+      } catch (err) {
+        console.error('Erro ao excluir usuário:', err);
+        setError('Erro ao excluir usuário');
+      }
+    }
   };
 
   const sectors = [
@@ -57,7 +86,7 @@ const AdminSettings = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold text-gray-800">Gerenciar Usuários</h2>
-              <button 
+              <button
                 onClick={() => setIsCreateModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
               >
@@ -126,10 +155,16 @@ const AdminSettings = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex justify-end gap-2">
-                              <button className="text-blue-600 hover:text-blue-900">
+                              <button
+                                onClick={() => handleEdit(user)}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
                                 <Edit size={18} />
                               </button>
-                              <button className="text-red-600 hover:text-red-900">
+                              <button
+                                onClick={() => handleDelete(user.id)}
+                                className="text-red-600 hover:text-red-900"
+                              >
                                 <Trash size={18} />
                               </button>
                             </div>
@@ -199,15 +234,14 @@ const AdminSettings = () => {
             <h1 className="text-xl font-bold text-gray-800">Configurações</h1>
             <p className="text-sm text-gray-500 mt-1">Painel Administrativo</p>
           </div>
-          
+
           <nav className="px-4 pb-4">
             <button
               onClick={() => setActiveTab('users')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'users' 
-                  ? 'bg-indigo-50 text-indigo-600' 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'users'
+                  ? 'bg-indigo-50 text-indigo-600'
                   : 'text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <User size={20} />
               <span>Usuários</span>
@@ -215,11 +249,10 @@ const AdminSettings = () => {
 
             <button
               onClick={() => setActiveTab('sectors')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'sectors' 
-                  ? 'bg-indigo-50 text-indigo-600' 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'sectors'
+                  ? 'bg-indigo-50 text-indigo-600'
                   : 'text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <Building2 size={20} />
               <span>Setores</span>
@@ -227,11 +260,10 @@ const AdminSettings = () => {
 
             <button
               onClick={() => setActiveTab('permissions')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'permissions' 
-                  ? 'bg-indigo-50 text-indigo-600' 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'permissions'
+                  ? 'bg-indigo-50 text-indigo-600'
                   : 'text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <Shield size={20} />
               <span>Permissões</span>
@@ -239,11 +271,10 @@ const AdminSettings = () => {
 
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'analytics' 
-                  ? 'bg-indigo-50 text-indigo-600' 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'analytics'
+                  ? 'bg-indigo-50 text-indigo-600'
                   : 'text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <BarChart size={20} />
               <span>Analytics</span>
@@ -251,11 +282,10 @@ const AdminSettings = () => {
 
             <button
               onClick={() => setActiveTab('system')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'system' 
-                  ? 'bg-indigo-50 text-indigo-600' 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'system'
+                  ? 'bg-indigo-50 text-indigo-600'
                   : 'text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <Settings size={20} />
               <span>Sistema</span>
@@ -273,6 +303,18 @@ const AdminSettings = () => {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleUserCreationSuccess}
       />
+
+      {isEditModalOpen && selectedUser && (
+        <UserEditModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={() => {
+            fetchUsers();
+            setIsEditModalOpen(false);
+          }}
+          user={selectedUser}
+        />
+      )}
     </div>
   );
 };

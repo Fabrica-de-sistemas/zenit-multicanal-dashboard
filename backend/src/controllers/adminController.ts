@@ -65,8 +65,38 @@ export const adminController = {
 
     async updateUser(req: Request, res: Response) {
         try {
-            // Implementar atualização de usuário
-            return res.status(501).json({ error: 'Não implementado' });
+            const { id } = req.params;
+            const { fullName, email, role, sector } = req.body;
+
+            console.log('Atualizando usuário:', { id, fullName, email, role, sector });
+
+            const checkUser = await query('SELECT id FROM users WHERE email = ? AND id != ?', [email, id]);
+            if (checkUser.length > 0) {
+                return res.status(400).json({ error: 'Este email já está em uso' });
+            }
+
+            await execute(
+                `
+            UPDATE users
+            SET full_name = ?,
+                email = ?,
+                role = ?,
+                sector = ?,
+                updated_at = NOW()
+            WHERE id = ?
+            `,
+                [fullName, email, role, sector, id]
+            );
+
+            console.log('Usuário atualizado com sucesso');
+
+            const [updatedUser] = await query(
+                `SELECT id, full_name as fullName, email, role, sector 
+             FROM users WHERE id = ?`,
+                [id]
+            );
+
+            return res.json(updatedUser);
         } catch (error) {
             console.error('Erro ao atualizar usuário:', error);
             return res.status(500).json({ error: 'Erro ao atualizar usuário' });
@@ -75,8 +105,22 @@ export const adminController = {
 
     async deleteUser(req: Request, res: Response) {
         try {
-            // Implementar deleção de usuário
-            return res.status(501).json({ error: 'Não implementado' });
+            const { id } = req.params;
+
+            console.log('Deletando usuário:', id);
+
+            // Verificar se o usuário existe
+            const [user] = await query('SELECT id FROM users WHERE id = ?', [id]);
+            if (!user) {
+                return res.status(404).json({ error: 'Usuário não encontrado' });
+            }
+
+            // Deletar o usuário
+            await execute('DELETE FROM users WHERE id = ?', [id]);
+
+            console.log('Usuário deletado com sucesso');
+
+            return res.status(204).send();
         } catch (error) {
             console.error('Erro ao deletar usuário:', error);
             return res.status(500).json({ error: 'Erro ao deletar usuário' });
