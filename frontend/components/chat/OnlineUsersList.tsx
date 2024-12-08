@@ -1,8 +1,6 @@
-// frontend/src/components/chat/OnlineUsersList.tsx
-import React from 'react';
-import { MessageCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { MessageCircle, Search, ArrowUpDown } from 'lucide-react';
 import { OnlineUser } from '@/types/chatTypes';
-
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -30,6 +28,8 @@ const getStatusRingColor = (status: string) => {
   }
 };
 
+type SortOrder = 'asc' | 'desc';
+
 interface OnlineUsersListProps {
   users: OnlineUser[];
   onStartPrivateChat: (userId: string, userName: string) => void;
@@ -41,20 +41,67 @@ export const OnlineUsersList: React.FC<OnlineUsersListProps> = ({
   onStartPrivateChat,
   currentUserId
 }) => {
-  // Ordenar usuários: usuário atual primeiro, depois os outros em ordem alfabética
-  const sortedUsers = [...users].sort((a, b) => {
-    if (a.id === currentUserId) return -1;
-    if (b.id === currentUserId) return 1;
-    return a.name.localeCompare(b.name);
-  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sectorSortOrder, setSectorSortOrder] = useState<SortOrder>('asc');
+
+  // Filtra e ordena usuários
+  const filteredAndSortedUsers = [...users]
+    // Filtrar por termo de busca
+    .filter(user => {
+      if (!searchTerm) return true;
+      return user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.sector.toLowerCase().includes(searchTerm.toLowerCase());
+    })
+    // Ordenar usuários
+    .sort((a, b) => {
+      if (a.id === currentUserId) return -1;
+      if (b.id === currentUserId) return 1;
+
+      // Ordenação por setor
+      const sectorCompare = sectorSortOrder === 'asc'
+        ? a.sector.localeCompare(b.sector)
+        : b.sector.localeCompare(a.sector);
+
+      // Se setores são iguais, ordena por nome
+      if (sectorCompare === 0) {
+        return a.name.localeCompare(b.name);
+      }
+
+      return sectorCompare;
+    });
 
   return (
     <div className="p-4 space-y-4">
-      <div className="text-sm font-medium text-slate-400 px-2">
-        Colaboradores Online ({users.length})
+      {/* Controles de busca e ordenação */}
+      <div className="space-y-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar colaborador..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+          />
+        </div>
+
+        <div className="flex items-center justify-between px-2">
+          <span className="text-sm font-medium text-slate-400">
+            Colaboradores Online ({filteredAndSortedUsers.length})
+          </span>
+          <button
+            onClick={() => setSectorSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+            className="flex items-center space-x-1 text-sm text-slate-500 hover:text-indigo-500"
+          >
+            <span>Setor {sectorSortOrder === 'asc' ? '(A-Z)' : '(Z-A)'}</span>
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+
+      {/* Lista de usuários */}
       <div className="space-y-2">
-        {sortedUsers.map((user) => (
+        {filteredAndSortedUsers.map((user) => (
           <div
             key={user.id}
             className={`flex items-center space-x-3 p-2.5 rounded-xl hover:bg-slate-50 transition-all duration-200 ${user.id === currentUserId ? 'bg-slate-50' : ''
@@ -88,6 +135,13 @@ export const OnlineUsersList: React.FC<OnlineUsersListProps> = ({
             )}
           </div>
         ))}
+
+        {/* Mensagem quando não encontrar resultados */}
+        {filteredAndSortedUsers.length === 0 && searchTerm && (
+          <div className="text-center py-8 text-gray-500">
+            Nenhum colaborador encontrado para "{searchTerm}"
+          </div>
+        )}
       </div>
     </div>
   );
