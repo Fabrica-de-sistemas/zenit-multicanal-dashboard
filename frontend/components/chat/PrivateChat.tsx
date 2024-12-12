@@ -1,4 +1,5 @@
 // frontend/src/components/chat/PrivateChat.tsx
+'use client'
 import React, { useState, useEffect, useRef } from 'react';
 import { useSocket } from '@/hooks/useSocket';
 import { Send, Minus, X, Paperclip } from 'lucide-react';

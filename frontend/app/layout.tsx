@@ -1,6 +1,7 @@
-//frontend/app/layout.tsx
+// frontend/app/layout.tsx
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { PrivateChatProvider } from '@/contexts/PrivateChatContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,7 +17,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <PrivateChatProvider>
+          {children}
+        </PrivateChatProvider>
+      </body>
     </html>
   );
 }

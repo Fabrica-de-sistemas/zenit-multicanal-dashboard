@@ -5,21 +5,14 @@ import { OnlineUsersList } from './OnlineUsersList';
 import { UserStatusSelector } from './UserStatusSelector';
 import { OnlineUser } from '@/types/chatTypes';
 import { statusConfig } from '@/config/statusConfig';
-import { PrivateChat } from './PrivateChat';
-
-interface PrivateChatState {
-    userId: string;
-    userName: string;
-    isMinimized: boolean;
-    hasNewMessage: boolean;
-}
+import { usePrivateChat } from '@/contexts/PrivateChatContext';
 
 export const ChatSidebar = () => {
     const socket = useSocket();
     const { user } = useAuth();
     const [currentStatus, setCurrentStatus] = useState<keyof typeof statusConfig>('available');
     const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
-    const [privateChats, setPrivateChats] = useState<PrivateChatState[]>([]);
+    const { startPrivateChat } = usePrivateChat();
 
     // Efeito para carregar o status inicial
     useEffect(() => {
@@ -33,88 +26,19 @@ export const ChatSidebar = () => {
 
     // Efeito para gerenciar conexões e atualizações de status
     useEffect(() => {
-        if (!socket || !user) return;
+        if (!socket) return;
 
-        // Função para emitir o status atual
-        const emitUserConnected = () => {
-            const currentSavedStatus = localStorage.getItem(`userStatus_${user.id}`) as keyof typeof statusConfig || currentStatus;
-            
-            socket.emit('userConnected', {
-                id: user.id,
-                name: user.fullName,
-                role: user.role,
-                sector: user.sector || 'Geral',
-                status: currentSavedStatus
-            });
-
-            // Atualiza o estado local para refletir o status salvo
-            setCurrentStatus(currentSavedStatus);
-        };
-
-        // Conecta com o status correto
-        emitUserConnected();
-
-        // Atualiza a lista de usuários online quando receber atualizações
         socket.on('onlineUsers', (users: OnlineUser[]) => {
             setOnlineUsers(users);
-            
-            // Atualiza o status local se encontrar o usuário atual na lista
-            const currentUser = users.find(u => u.id === user.id);
-            if (currentUser) {
-                setCurrentStatus(currentUser.status);
-                localStorage.setItem(`userStatus_${user.id}`, currentUser.status);
-            }
-        });
-
-        socket.on('newPrivateMessage', (message) => {
-            if (message.toUserId === user.id) {
-                setPrivateChats(prev => {
-                    const existingChat = prev.find(chat => chat.userId === message.userId);
-                    if (existingChat) {
-                        if (existingChat.isMinimized) {
-                            return prev.map(chat => 
-                                chat.userId === message.userId 
-                                    ? { ...chat, hasNewMessage: true }
-                                    : chat
-                            );
-                        }
-                        return prev;
-                    }
-                    return [...prev, {
-                        userId: message.userId,
-                        userName: message.userName,
-                        isMinimized: false,
-                        hasNewMessage: true
-                    }];
-                });
-            }
         });
 
         return () => {
             socket.off('onlineUsers');
-            socket.off('newPrivateMessage');
         };
-    }, [socket, user, currentStatus]);
+    }, [socket]);
 
     const handleStartPrivateChat = (targetUserId: string, targetUserName: string) => {
-        if (!user || !socket) return;
-        
-        setPrivateChats(prev => {
-            const existingChat = prev.find(chat => chat.userId === targetUserId);
-            if (existingChat) {
-                return prev.map(chat => 
-                    chat.userId === targetUserId 
-                        ? { ...chat, isMinimized: false, hasNewMessage: false }
-                        : chat
-                );
-            }
-            return [...prev, {
-                userId: targetUserId,
-                userName: targetUserName,
-                isMinimized: false,
-                hasNewMessage: false
-            }];
-        });
+        startPrivateChat(targetUserId, targetUserName);
     };
 
     const handleStatusChange = (status: keyof typeof statusConfig) => {
@@ -135,82 +59,36 @@ export const ChatSidebar = () => {
         }
     };
 
-    const handleMinimizeChat = (targetUserId: string) => {
-        setPrivateChats(prev => {
-            return prev.map(chat => {
-                if (chat.userId === targetUserId) {
-                    console.log(`Minimizando chat com ${chat.userName}. Estado anterior: ${chat.isMinimized}`);
-                    return {
-                        ...chat,
-                        isMinimized: !chat.isMinimized,
-                        hasNewMessage: false
-                    };
-                }
-                return chat;
-            });
-        });
-    };
-
-    const handleCloseChat = (targetUserId: string) => {
-        console.log('Fechando chat:', targetUserId);
-        setPrivateChats(prev => prev.filter(chat => chat.userId !== targetUserId));
-    };
-
     if (!user || !socket) return null;
 
     return (
-        <>
-            <div className="w-80 border-r border-gray-200 bg-white flex flex-col h-full">
-                <div className="p-4 border-b border-gray-200">
-                    <div className="flex items-center space-x-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                            {user.fullName.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                                {user.fullName}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">
-                                {user.sector || 'Geral'}
-                            </p>
-                        </div>
+        <div className="w-80 border-r border-gray-200 bg-white flex flex-col h-full">
+            <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        {user.fullName.charAt(0)}
                     </div>
-                    <UserStatusSelector 
-                        currentStatus={currentStatus}
-                        onStatusChange={handleStatusChange}
-                    />
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                    <OnlineUsersList 
-                        users={onlineUsers} 
-                        onStartPrivateChat={handleStartPrivateChat}
-                        currentUserId={user.id}
-                    />
-                </div>
-            </div>
-
-            <div className="fixed bottom-0 right-0 flex flex-row-reverse gap-4 p-4 z-50">
-                {privateChats.map((chat, index) => (
-                    <div 
-                        key={chat.userId} 
-                        style={{ 
-                            right: `${(index * 288) + 16}px`
-                        }}
-                        className="absolute bottom-0"
-                    >
-                        <PrivateChat
-                            fromUserId={user.id}
-                            fromUserName={user.fullName}
-                            toUserId={chat.userId}
-                            toUserName={chat.userName}
-                            onClose={() => handleCloseChat(chat.userId)}
-                            onMinimize={() => handleMinimizeChat(chat.userId)}
-                            isMinimized={chat.isMinimized}
-                            hasNewMessage={chat.hasNewMessage}
-                        />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                            {user.fullName}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                            {user.sector || 'Geral'}
+                        </p>
                     </div>
-                ))}
+                </div>
+                <UserStatusSelector
+                    currentStatus={currentStatus}
+                    onStatusChange={handleStatusChange}
+                />
             </div>
-        </>
+            <div className="flex-1 overflow-y-auto">
+                <OnlineUsersList
+                    users={onlineUsers}
+                    onStartPrivateChat={handleStartPrivateChat}
+                    currentUserId={user.id}
+                />
+            </div>
+        </div>
     );
 };
