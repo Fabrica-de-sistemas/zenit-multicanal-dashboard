@@ -28,3 +28,36 @@ export const adminService = {
     }
   }
 };
+
+async function fetchUsers() {
+  try {
+    const response = await fetch('http://localhost:5000/api/admin/users', {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+
+      if (data.code === 'TOKEN_EXPIRED') {
+        // Limpa os dados da sessão
+        localStorage.removeItem('token');
+        localStorage.removeItem('userData');
+
+        // Redireciona para o login
+        window.location.href = '/login';
+        throw new Error('Sessão expirada, faça login novamente');
+      }
+
+      throw new Error(data.error || 'Erro ao buscar usuários');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erro detalhado:', error);
+    throw error;
+  }
+}

@@ -74,8 +74,8 @@ export const authController = {
             userId: newUser.id,
             email: newUser.email
           },
-          process.env.JWT_SECRET || 'fallback_secret',
-          { expiresIn: '24h' }
+          process.env.JWT_SECRET || 'fallback_secret'
+          // Removido o expiresIn para o token não expirar
         );
 
         console.log('Token JWT gerado com sucesso');
@@ -149,8 +149,7 @@ export const authController = {
       console.log('Gerando token JWT...');
       const token = jwt.sign(
         { userId: user.id, email: user.email },
-        process.env.JWT_SECRET || 'fallback_secret',
-        { expiresIn: '24h' }
+        process.env.JWT_SECRET || 'fallback_secret'
       );
 
       console.log('Login realizado com sucesso');
