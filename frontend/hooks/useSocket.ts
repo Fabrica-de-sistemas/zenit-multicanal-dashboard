@@ -1,20 +1,28 @@
 // frontend/hooks/useSocket.ts
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import io, { Socket } from 'socket.io-client';
 
+let globalSocket: Socket | null = null; // Variável global para manter uma única conexão
+
 export function useSocket() {
-    const [socket, setSocket] = useState<Socket | null>(null);
+    const socketRef = useRef<Socket | null>(null);
 
     useEffect(() => {
+        // Se já existe uma conexão global, usa ela
+        if (globalSocket) {
+            socketRef.current = globalSocket;
+            return;
+        }
+
         const token = localStorage.getItem('token');
-        
+
         const newSocket = io('http://localhost:5000', {
             reconnectionDelayMax: 10000,
             reconnection: true,
             reconnectionAttempts: 10,
             transports: ['websocket', 'polling'],
             auth: {
-                token // Adicionar token na autenticação
+                token
             },
             withCredentials: true,
             timeout: 10000
@@ -25,7 +33,6 @@ export function useSocket() {
         });
 
         newSocket.on('connect_error', (error) => {
-            // Tratar o erro silenciosamente se for apenas um erro de websocket
             if (error.message !== 'websocket error') {
                 console.error('Erro de conexão Socket.IO:', error.message);
             }
@@ -35,14 +42,15 @@ export function useSocket() {
             console.log('Socket desconectado:', reason);
         });
 
-        setSocket(newSocket);
+        // Armazena o socket globalmente
+        globalSocket = newSocket;
+        socketRef.current = newSocket;
 
+        // Cleanup apenas quando a aplicação for fechada
         return () => {
-            if (newSocket) {
-                newSocket.close();
-            }
+            // Não fechamos a conexão aqui mais
         };
     }, []);
 
-    return socket;
+    return socketRef.current;
 }

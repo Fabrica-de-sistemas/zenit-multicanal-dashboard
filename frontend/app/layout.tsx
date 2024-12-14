@@ -2,6 +2,8 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { PrivateChatProvider } from '@/contexts/PrivateChatContext';
+import { StatusProvider } from '@/contexts/StatusContext';
+import { ConnectionManager } from '@/components/ConnectionManager';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,9 +20,12 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <PrivateChatProvider>
-          {children}
-        </PrivateChatProvider>
+        <StatusProvider>
+          <PrivateChatProvider>
+            <ConnectionManager />
+            {children}
+          </PrivateChatProvider>
+        </StatusProvider>
       </body>
     </html>
   );

@@ -13,6 +13,7 @@ import path from 'path';
 
 const app = express();
 const httpServer = createServer(app);
+const userConnections = new Map<string, string>(); // userId -> socketId
 
 // Configuração do CORS
 app.use(cors({
@@ -80,13 +81,31 @@ socketServer.on('connection', (socket) => {
 
     // Evento quando um usuário se conecta ao chat
     socket.on('userConnected', (userData) => {
+        const existingSocketId = userConnections.get(userData.id);
+
+        // Se já existe uma conexão para este usuário
+        if (existingSocketId) {
+            // Não emitir novo status se já está conectado
+            return;
+        }
+
         console.log('Usuário conectado ao chat:', userData);
+
+        // Registra a nova conexão
+        userConnections.set(userData.id, socket.id);
+
+        // Adiciona o usuário mantendo o status existente
+        const currentUser = companyChatService.getOnlineUsers()
+            .find(u => u.id === userData.id);
+
         companyChatService.addOnlineUser({
             ...userData,
             socketId: socket.id,
             isOnline: true,
-            lastSeen: new Date().toISOString()
+            lastSeen: new Date().toISOString(),
+            status: currentUser?.status || userData.status || 'available'
         });
+
         // Emite a lista atualizada para todos
         socketServer.emit('onlineUsers', companyChatService.getOnlineUsers());
     });
@@ -200,7 +219,16 @@ socketServer.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('Cliente desconectado:', socket.id);
-        // Remove usuário da lista de online
+
+        // Remove a conexão do mapa
+        for (const [userId, socketId] of userConnections.entries()) {
+            if (socketId === socket.id) {
+                userConnections.delete(userId);
+                break;
+            }
+        }
+
+        // Remove usuário da lista de online mas mantém o status
         companyChatService.removeOnlineUser(socket.id);
         // Emite lista atualizada para todos
         socketServer.emit('onlineUsers', companyChatService.getOnlineUsers());

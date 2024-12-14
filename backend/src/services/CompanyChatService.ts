@@ -126,10 +126,14 @@ class CompanyChatService extends EventEmitter {
             // Mantém o status existente se não for fornecido um novo
             this.onlineUsers.set(user.id, {
                 ...user,
-                status: user.status || existingUser.status
+                status: user.status || existingUser.status || 'available'
             });
         } else {
-            this.onlineUsers.set(user.id, user);
+            // Se for novo usuário, usa o status fornecido
+            this.onlineUsers.set(user.id, {
+                ...user,
+                status: user.status || 'available'
+            });
         }
         if (user.socketId) {
             this.userSockets.set(user.id, user.socketId);
@@ -137,11 +141,18 @@ class CompanyChatService extends EventEmitter {
     }
 
     public removeOnlineUser(socketId: string): void {
-        const userId = Array.from(this.onlineUsers.values())
-            .find(user => user.socketId === socketId)?.id;
+        const userId = Array.from(this.userSockets.entries())
+            .find(([_, id]) => id === socketId)?.[0];
 
         if (userId) {
-            this.onlineUsers.delete(userId);
+            const user = this.onlineUsers.get(userId);
+            if (user) {
+                // Mantém o usuário e seu status, só atualiza o socketId
+                this.onlineUsers.set(userId, {
+                    ...user,
+                    socketId: undefined
+                });
+            }
             this.userSockets.delete(userId);
         }
     }
@@ -149,7 +160,10 @@ class CompanyChatService extends EventEmitter {
     public updateUserStatus(userId: string, status: 'available' | 'away' | 'meeting'): OnlineUser | null {
         const user = this.onlineUsers.get(userId);
         if (user) {
-            const updatedUser = { ...user, status };
+            const updatedUser = {
+                ...user,
+                status
+            };
             this.onlineUsers.set(userId, updatedUser);
             return updatedUser;
         }
@@ -157,7 +171,21 @@ class CompanyChatService extends EventEmitter {
     }
 
     public getOnlineUsers(): OnlineUser[] {
-        return Array.from(this.onlineUsers.values());
+        // Aqui estamos pegando os usuários do Map
+        const users = Array.from(this.onlineUsers.values());
+
+        // Para cada usuário, vamos garantir que o status seja mantido
+        return users.map(user => {
+            // Se não houver status definido, então usamos 'available'
+            if (!user.status) {
+                return {
+                    ...user,
+                    status: 'available'
+                };
+            }
+            // Se houver status, retornamos o usuário como está
+            return user;
+        });
     }
 
     public getSocketIdByUserId(userId: string): string | undefined {

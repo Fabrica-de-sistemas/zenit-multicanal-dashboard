@@ -1,65 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useSocket } from '@/hooks/useSocket';
+import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { OnlineUsersList } from './OnlineUsersList';
 import { UserStatusSelector } from './UserStatusSelector';
-import { OnlineUser } from '@/types/chatTypes';
-import { statusConfig } from '@/config/statusConfig';
+import { useStatus } from '@/contexts/StatusContext';
 import { usePrivateChat } from '@/contexts/PrivateChatContext';
 
 export const ChatSidebar = () => {
-    const socket = useSocket();
     const { user } = useAuth();
-    const [currentStatus, setCurrentStatus] = useState<keyof typeof statusConfig>('available');
-    const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+    const { currentStatus, setUserStatus, onlineUsers } = useStatus();
     const { startPrivateChat } = usePrivateChat();
-
-    // Efeito para carregar o status inicial
-    useEffect(() => {
-        if (user?.id) {
-            const savedStatus = localStorage.getItem(`userStatus_${user.id}`);
-            if (savedStatus && Object.keys(statusConfig).includes(savedStatus)) {
-                setCurrentStatus(savedStatus as keyof typeof statusConfig);
-            }
-        }
-    }, [user]);
-
-    // Efeito para gerenciar conexões e atualizações de status
-    useEffect(() => {
-        if (!socket) return;
-
-        socket.on('onlineUsers', (users: OnlineUser[]) => {
-            setOnlineUsers(users);
-        });
-
-        return () => {
-            socket.off('onlineUsers');
-        };
-    }, [socket]);
 
     const handleStartPrivateChat = (targetUserId: string, targetUserName: string) => {
         startPrivateChat(targetUserId, targetUserName);
     };
 
-    const handleStatusChange = (status: keyof typeof statusConfig) => {
-        if (!user?.id) return;
-
-        // Atualiza o estado local
-        setCurrentStatus(status);
-
-        // Persiste no localStorage
-        localStorage.setItem(`userStatus_${user.id}`, status);
-
-        // Envia para o servidor
-        if (socket) {
-            socket.emit('updateStatus', {
-                userId: user.id,
-                status
-            });
-        }
-    };
-
-    if (!user || !socket) return null;
+    if (!user) return null;
 
     return (
         <div className="w-80 border-r border-gray-200 bg-white flex flex-col h-full">
@@ -79,7 +34,7 @@ export const ChatSidebar = () => {
                 </div>
                 <UserStatusSelector
                     currentStatus={currentStatus}
-                    onStatusChange={handleStatusChange}
+                    onStatusChange={setUserStatus}
                 />
             </div>
             <div className="flex-1 overflow-y-auto">
