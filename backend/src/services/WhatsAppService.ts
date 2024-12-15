@@ -2,6 +2,9 @@
 import { Client, Message, LocalAuth } from 'whatsapp-web.js';
 import { EventEmitter } from 'events';
 import qrcode from 'qrcode-terminal';
+import { chatQueries } from '../database/queries/chatQueries';
+import { execute, query } from '../lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
 interface WhatsAppMessage {
   id: string;
@@ -187,59 +190,90 @@ class WhatsAppService extends EventEmitter {
     }
   }
 
-  public async sendMessage(to: string, message: string): Promise<boolean> {
+  private async processIncomingMessage(msg: Message) {
     try {
-      // Adiciona um log para verificar o estado
-      console.log('Estado atual do cliente:', {
-        isReady: this.isReady,
-        timestamp: new Date().toISOString()
-      });
+      const chat = await msg.getChat();
+      if (chat.isGroup || msg.broadcast || msg.isStatus) return;
 
-      if (!this.isReady) {
-        console.log('Cliente WhatsApp não está pronto. Aguardando...');
-        // Opcional: Adicionar uma espera curta e tentar novamente
-        await new Promise(resolve => setTimeout(resolve, 2000));
+      const contact = await msg.getContact();
+      const ticketId = msg.from;
 
-        if (!this.isReady) {
-          console.log('Cliente ainda não está pronto após espera');
-          return false;
-        }
+      // Salva ou atualiza o ticket
+      await execute(chatQueries.createTicket, [ticketId, 'open'])
+        .catch(() => { }); // Ignora erro se ticket já existe
+
+      // Salva a mensagem
+      const messageId = uuidv4();
+      await execute(chatQueries.saveTicketMessage, [
+        messageId,
+        ticketId,
+        msg.body,
+        contact.pushname || 'Sem Nome',
+        msg.from.replace('@c.us', ''),
+        false // não é operador
+      ]);
+
+      // Carrega o ticket atualizado
+      const ticket = await this.getTicketWithMessages(ticketId);
+      if (ticket) {
+        this.emit('ticketUpdated', ticket);
       }
+    } catch (error) {
+      console.error('Erro ao processar mensagem:', error);
+    }
+  }
 
-      // Remove o sufixo @c.us se existir
+  async getTicketWithMessages(ticketId: string) {
+    const [ticketData] = await query(
+      `SELECT * FROM tickets WHERE id = ?`,
+      [ticketId]
+    );
+
+    if (!ticketData) return null;
+
+    const messages = await query(chatQueries.getTicketMessages, [ticketId]);
+
+    return {
+      id: ticketData.id,
+      status: ticketData.status,
+      messages: messages.map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        sender: {
+          name: msg.sender_name,
+          username: msg.sender_username,
+          isOperator: msg.is_operator
+        },
+        timestamp: msg.created_at
+      })),
+      createdAt: ticketData.created_at,
+      updatedAt: ticketData.updated_at
+    };
+  }
+
+  async sendMessage(to: string, message: string): Promise<boolean> {
+    try {
+      if (!this.isReady) return false;
+
       const cleanNumber = to.replace('@c.us', '');
-      console.log('Tentando enviar mensagem para:', cleanNumber);
-
-      // Adiciona o sufixo @c.us para garantir que é um número privado
       const fullNumber = `${cleanNumber}@c.us`;
 
-      // Envia a mensagem
       await this.client.sendMessage(fullNumber, message);
-      console.log('Mensagem enviada com sucesso para:', fullNumber);
 
-      // Cria a mensagem do operador
-      const operatorMessage: WhatsAppMessage = {
-        id: Date.now().toString(),
-        content: message,
-        platform: 'whatsapp',
-        sender: {
-          name: 'Atendente',
-          username: 'operator',
-          isOperator: true
-        },
-        timestamp: this.formatDate(new Date())
-      };
+      // Salva a mensagem do operador no banco
+      const messageId = uuidv4();
+      await execute(chatQueries.saveTicketMessage, [
+        messageId,
+        fullNumber,
+        message,
+        'Atendente',
+        'operator',
+        true
+      ]);
 
-      // Atualiza o ticket com a mensagem do operador
-      let ticket = this.tickets.get(fullNumber);
+      const ticket = await this.getTicketWithMessages(fullNumber);
       if (ticket) {
-        ticket.messages.push(operatorMessage);
-        ticket.updatedAt = this.formatDate(new Date());
-        this.tickets.set(fullNumber, ticket);
-
-        // Emite o evento de atualização do ticket
         this.emit('ticketUpdated', ticket);
-        console.log('Mensagem enviada e ticket atualizado');
       }
 
       return true;

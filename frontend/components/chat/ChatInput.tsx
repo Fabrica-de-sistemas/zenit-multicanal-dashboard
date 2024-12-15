@@ -19,7 +19,7 @@ export const ChatInput = () => {
       content: newMessage,
       userId: user.id,
       userName: user.fullName,
-      userRole: user.role,
+      userRole: user.role || 'Geral',
       timestamp: new Date().toISOString()
     };
 
@@ -52,7 +52,7 @@ export const ChatInput = () => {
         content: `Arquivo: ${file.name}`,
         userId: user.id,
         userName: user.fullName,
-        userRole: user.role,
+        userRole: user.role || 'Geral',
         timestamp: new Date().toISOString(),
         fileUrl: data.fileUrl,
         fileName: file.name,

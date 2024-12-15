@@ -30,21 +30,26 @@ export const ChatMessages = () => {
 
     socket.emit('getChatHistory');
 
-    socket.on('chatHistory', (history: ChatMessage[]) => {
+    const handleChatHistory = async (history: ChatMessage[]) => {
+      console.log('Histórico recebido:', history);
       setMessages(history);
-      scrollToBottom();
-    });
+      setTimeout(scrollToBottom, 100);
+    };
 
-    socket.on('newMessage', (message: ChatMessage) => {
-      setMessages((prev) => [...prev, message]);
-      scrollToBottom();
-    });
+    const handleNewMessage = (message: ChatMessage) => {
+      setMessages(prev => [...prev, message]);
+      setTimeout(scrollToBottom, 100);
+    };
 
-    socket.on('messageReacted', (updatedMessage: ChatMessage) => {
-      setMessages((prev) =>
-        prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
+    const handleMessageReacted = (updatedMessage: ChatMessage) => {
+      setMessages(prev =>
+        prev.map(msg => (msg.id === updatedMessage.id ? updatedMessage : msg))
       );
-    });
+    };
+
+    socket.on('chatHistory', handleChatHistory);
+    socket.on('newMessage', handleNewMessage);
+    socket.on('messageReacted', handleMessageReacted);
 
     return () => {
       socket.off('chatHistory');

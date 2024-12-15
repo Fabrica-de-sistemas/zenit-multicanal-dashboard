@@ -9,11 +9,13 @@ import WhatsAppService from './services/WhatsAppService';
 import CompanyChatService from './services/CompanyChatService';
 import uploadRoutes from './routes/uploadRoutes';
 import adminRoutes from './routes/adminRoutes';
+import ChatService from './services/ChatService';
 import path from 'path';
 
 const app = express();
 const httpServer = createServer(app);
 const userConnections = new Map<string, string>(); // userId -> socketId
+const chatService = ChatService.getInstance();
 
 // Configuração do CORS
 app.use(cors({
@@ -73,10 +75,18 @@ socketServer.on('connection', (socket) => {
     console.log('Tickets enviados para novo cliente:', tickets.length);
 
     // Eventos do Chat Interno
-    socket.on('getChatHistory', () => {
-        console.log('Solicitação de histórico do chat interno');
-        const messages = companyChatService.getMessages();
-        socket.emit('chatHistory', messages);
+    socket.on('getChatHistory', async () => {
+        try {
+            console.log('Solicitação de histórico do chat interno');
+            const messages = await chatService.getHistory(); // Usa o chatService em vez do companyChatService
+            console.log('Enviando histórico:', messages.length, 'mensagens');
+            socket.emit('chatHistory', messages);
+        } catch (error) {
+            console.error('Erro ao buscar histórico:', error);
+            socket.emit('messageError', {
+                error: 'Não foi possível carregar o histórico'
+            });
+        }
     });
 
     // Evento quando um usuário se conecta ao chat
@@ -151,9 +161,16 @@ socketServer.on('connection', (socket) => {
         }
     });
 
-    socket.on('getPrivateChatHistory', ({ fromUserId, toUserId }) => {
-        const messages = companyChatService.getPrivateMessages(fromUserId, toUserId);
-        socket.emit('privateChatHistory', { messages });
+    socket.on('getPrivateChatHistory', async ({ fromUserId, toUserId }) => {
+        try {
+            const messages = await companyChatService.getPrivateMessages(fromUserId, toUserId);
+            socket.emit('privateChatHistory', { messages });
+        } catch (error) {
+            console.error('Erro ao buscar histórico privado:', error);
+            socket.emit('messageError', {
+                error: 'Não foi possível carregar o histórico'
+            });
+        }
     });
 
     socket.on('sendMessage', async (messageData) => {
@@ -164,7 +181,8 @@ socketServer.on('connection', (socket) => {
                 throw new Error('Dados da mensagem inválidos');
             }
 
-            const newMessage = await companyChatService.addMessage(messageData);
+            // Usa o ChatService para mensagens internas
+            const newMessage = await chatService.addMessage(messageData);
             socketServer.emit('newMessage', newMessage);
             console.log('Mensagem do chat interno enviada com sucesso');
         } catch (error) {

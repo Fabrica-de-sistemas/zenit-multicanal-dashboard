@@ -75,7 +75,6 @@ export const authController = {
             email: newUser.email
           },
           process.env.JWT_SECRET || 'fallback_secret'
-          // Removido o expiresIn para o token não expirar
         );
 
         console.log('Token JWT gerado com sucesso');

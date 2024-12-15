@@ -1,3 +1,2 @@
-2024/12/14-13:05:27.820 16c07 Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/shared_proto_db/metadata/MANIFEST-000001
-2024/12/14-13:05:27.820 16c07 Recovering log #3
-2024/12/14-13:05:27.820 16c07 Reusing old log /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/shared_proto_db/metadata/000003.log 
+2024/12/14-20:24:22.155 14b0f Creating DB /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/shared_proto_db/metadata since it was missing.
+2024/12/14-20:24:22.161 14b0f Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/shared_proto_db/metadata/MANIFEST-000001

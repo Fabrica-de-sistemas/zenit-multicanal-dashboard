@@ -91,3 +91,5 @@ export async function execute(
         throw error;
     }
 }
+
+export { RowDataPacket };

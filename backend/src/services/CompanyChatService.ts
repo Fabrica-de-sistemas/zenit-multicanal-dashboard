@@ -1,6 +1,19 @@
-// backend/src/services/CompanyChatService.ts
+// services/CompanyChatService.ts
 import { EventEmitter } from 'events';
-import { MessageReaction } from '../types/chatTypes';
+import { MessageReaction, ChatMessage } from '../types/chatTypes';
+import { chatQueries } from '../database/queries/chatQueries';
+import { execute, query, RowDataPacket } from '../lib/db';
+import { v4 as uuidv4 } from 'uuid';
+
+interface PrivateMessageDB extends RowDataPacket {
+    id: string;
+    from_user_id: string;
+    to_user_id: string;
+    content: string;
+    created_at: Date;
+    sender_name: string;
+    role: string;
+}
 
 interface OnlineUser {
     id: string;
@@ -13,25 +26,11 @@ interface OnlineUser {
     socketId?: string;
 }
 
-interface ChatMessage {
-    id: string;
-    content: string;
-    userId: string;
-    userName: string;
-    userRole: string;
-    timestamp: string;
-    fileUrl?: string;
-    fileName?: string;
-    fileType?: string;
-    reactions: MessageReaction[];
-    toUserId?: string;
-}
-
 class CompanyChatService extends EventEmitter {
     private static instance: CompanyChatService;
     private messages: ChatMessage[] = [];
     private onlineUsers: Map<string, OnlineUser> = new Map();
-    private userSockets: Map<string, string> = new Map(); // userId -> socketId
+    private userSockets: Map<string, string> = new Map();
 
     private constructor() {
         super();
@@ -64,7 +63,6 @@ class CompanyChatService extends EventEmitter {
             message.reactions = [];
         }
 
-        // Remove reação existente do usuário com o mesmo emoji
         const existingReactionIndex = message.reactions.findIndex(
             reaction => reaction.userId === userId && reaction.emoji === emoji
         );
@@ -72,7 +70,6 @@ class CompanyChatService extends EventEmitter {
         if (existingReactionIndex !== -1) {
             message.reactions.splice(existingReactionIndex, 1);
         } else {
-            // Adiciona nova reação
             message.reactions.push({
                 emoji,
                 userId,
@@ -83,53 +80,97 @@ class CompanyChatService extends EventEmitter {
         return message;
     }
 
-    public async addPrivateMessage(messageData: Omit<ChatMessage, 'id' | 'reactions'>): Promise<ChatMessage> {
-        const newMessage: ChatMessage = {
-            ...messageData,
-            id: Date.now().toString(),
-            reactions: []
-        };
+    async addPrivateMessage(messageData: { userId: string; toUserId: string; content: string; }): Promise<ChatMessage> {
+        try {
+            // Gera ID único
+            const messageId = uuidv4();
 
-        this.messages.push(newMessage);
-        return newMessage;
+            // Salva no banco
+            await execute(chatQueries.savePrivateMessage, [
+                messageId,
+                messageData.userId,
+                messageData.toUserId,
+                messageData.content
+            ]);
+
+            console.log('Mensagem privada salva:', {
+                id: messageId,
+                from: messageData.userId,
+                to: messageData.toUserId,
+                content: messageData.content
+            });
+
+            // Busca a mensagem com os dados do usuário
+            const [savedMessage] = await query<PrivateMessageDB>(
+                `SELECT pm.*, u.full_name as sender_name, u.role 
+                 FROM private_messages pm 
+                 JOIN users u ON pm.from_user_id = u.id 
+                 WHERE pm.id = ?`,
+                [messageId]
+            );
+
+            if (!savedMessage) {
+                throw new Error('Falha ao recuperar mensagem salva');
+            }
+
+            return {
+                id: savedMessage.id,
+                content: savedMessage.content,
+                userId: savedMessage.from_user_id,
+                userName: savedMessage.sender_name,
+                userRole: savedMessage.role,
+                timestamp: savedMessage.created_at.toISOString(),
+                reactions: []
+            };
+        } catch (error) {
+            console.error('Erro ao salvar mensagem privada:', error);
+            throw error;
+        }
     }
+
 
     public getMessages(): ChatMessage[] {
-        return this.messages.filter(msg => !msg.toUserId);
+        return this.messages;
     }
 
-    public startPrivateChat(fromUserId: string, toUserId: string): {
+    public async startPrivateChat(fromUserId: string, toUserId: string): Promise<{
         fromUserId: string;
         toUserId: string;
         messages: ChatMessage[];
-    } {
-        const messages = this.getPrivateMessages(fromUserId, toUserId);
+    }> {
+        const messages = await this.getPrivateMessages(fromUserId, toUserId);
         return {
             fromUserId,
             toUserId,
-            messages
+            messages: await messages
         };
     }
 
-    public getPrivateMessages(fromUserId: string, toUserId: string): ChatMessage[] {
-        return this.messages.filter(message =>
-            message.toUserId && (
-                (message.userId === fromUserId && message.toUserId === toUserId) ||
-                (message.userId === toUserId && message.toUserId === fromUserId)
-            )
-        );
+    async getPrivateMessages(fromUserId: string, toUserId: string): Promise<ChatMessage[]> {
+        const messages = await query<PrivateMessageDB>(chatQueries.getPrivateMessages, [
+            fromUserId, toUserId, toUserId, fromUserId
+        ]);
+
+        return messages.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            userId: msg.from_user_id,
+            userName: msg.sender_name,
+            userRole: msg.role,
+            timestamp: msg.created_at.toISOString(),
+            reactions: []
+        }));
     }
 
+    // Restante dos métodos permanece igual
     public addOnlineUser(user: OnlineUser): void {
         const existingUser = this.onlineUsers.get(user.id);
         if (existingUser) {
-            // Mantém o status existente se não for fornecido um novo
             this.onlineUsers.set(user.id, {
                 ...user,
                 status: user.status || existingUser.status || 'available'
             });
         } else {
-            // Se for novo usuário, usa o status fornecido
             this.onlineUsers.set(user.id, {
                 ...user,
                 status: user.status || 'available'
@@ -147,7 +188,6 @@ class CompanyChatService extends EventEmitter {
         if (userId) {
             const user = this.onlineUsers.get(userId);
             if (user) {
-                // Mantém o usuário e seu status, só atualiza o socketId
                 this.onlineUsers.set(userId, {
                     ...user,
                     socketId: undefined
@@ -171,21 +211,10 @@ class CompanyChatService extends EventEmitter {
     }
 
     public getOnlineUsers(): OnlineUser[] {
-        // Aqui estamos pegando os usuários do Map
-        const users = Array.from(this.onlineUsers.values());
-
-        // Para cada usuário, vamos garantir que o status seja mantido
-        return users.map(user => {
-            // Se não houver status definido, então usamos 'available'
-            if (!user.status) {
-                return {
-                    ...user,
-                    status: 'available'
-                };
-            }
-            // Se houver status, retornamos o usuário como está
-            return user;
-        });
+        return Array.from(this.onlineUsers.values()).map(user => ({
+            ...user,
+            status: user.status || 'available'
+        }));
     }
 
     public getSocketIdByUserId(userId: string): string | undefined {
