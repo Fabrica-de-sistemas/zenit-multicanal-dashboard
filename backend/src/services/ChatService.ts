@@ -21,6 +21,11 @@ interface MessageReactionDB extends RowDataPacket {
   emoji: string;
 }
 
+interface ReactionResult extends RowDataPacket {
+  emoji: string;
+  users: string;
+}
+
 class ChatService extends EventEmitter {
   private static instance: ChatService;
   private messages: CompanyMessage[] = [];
@@ -38,23 +43,43 @@ class ChatService extends EventEmitter {
 
   async getHistory(): Promise<CompanyMessage[]> {
     const messages = await query<CompanyMessageDB>(chatQueries.getCompanyMessages);
-    return messages.map(msg => ({
-        id: msg.id,
-        userId: msg.user_id,
-        content: msg.content,
-        userName: msg.full_name,
-        userRole: msg.role || 'Geral',
-        timestamp: msg.created_at.toISOString(),
-        reactions: []
-    }));
-}
+
+    const messagesWithReactions = await Promise.all(
+      messages.map(async (msg) => {
+        const [reactionResults] = await query(
+          `SELECT 
+                    mr.emoji,
+                    GROUP_CONCAT(DISTINCT mr.user_id) as users
+                FROM message_reactions mr 
+                WHERE mr.message_id = ?
+                GROUP BY mr.emoji`,
+          [msg.id]
+        );
+
+        const reactions = Array.isArray(reactionResults) ? reactionResults : [reactionResults].filter(Boolean);
+
+        return {
+          id: msg.id,
+          userId: msg.user_id,
+          content: msg.content,
+          userName: msg.full_name,
+          userRole: msg.role || 'Geral',
+          timestamp: msg.created_at.toISOString(),
+          reactions: reactions.map(r => ({
+            emoji: r.emoji,
+            users: (r.users || '').split(',').filter(Boolean)
+          }))
+        };
+      })
+    );
+
+    return messagesWithReactions;
+  }
 
   async addMessage(message: CompanyMessage): Promise<CompanyMessage> {
     try {
-      // Gera ID único para a mensagem
       const messageId = uuidv4();
 
-      // Insere a mensagem no banco
       await execute(chatQueries.saveCompanyMessage, [
         messageId,
         message.userId,
@@ -64,10 +89,9 @@ class ChatService extends EventEmitter {
 
       console.log('Mensagem salva:', { messageId, ...message });
 
-      // Cria o objeto savedMessage corretamente
       const savedMessage = {
-        ...message,         // Spread primeiro
-        id: messageId,      // Depois sobrescreve com os novos valores
+        ...message,
+        id: messageId,
         timestamp: new Date().toISOString(),
         reactions: []
       };
@@ -81,38 +105,113 @@ class ChatService extends EventEmitter {
     }
   }
 
+
+
+  async addReaction(messageId: string, userId: string, userName: string, emoji: string): Promise<CompanyMessage> {
+    try {
+      console.log('addReaction iniciado:', { messageId, userId, userName, emoji });
+
+      const [existingReaction] = await query<MessageReactionDB>(
+        'SELECT * FROM message_reactions WHERE message_id = ? AND user_id = ? AND emoji = ?',
+        [messageId, userId, emoji]
+      );
+
+      if (existingReaction) {
+        console.log('Removendo reação existente');
+        await execute(
+          'DELETE FROM message_reactions WHERE message_id = ? AND user_id = ? AND emoji = ?',
+          [messageId, userId, emoji]
+        );
+      } else {
+        console.log('Adicionando nova reação');
+        const reactionId = uuidv4();
+        await execute(
+          'INSERT INTO message_reactions (id, message_id, user_id, user_name, emoji) VALUES (?, ?, ?, ?, ?)',
+          [reactionId, messageId, userId, userName, emoji]
+        );
+      }
+
+      const [message] = await query<CompanyMessageDB>(
+        'SELECT cm.*, u.full_name, u.role FROM company_messages cm JOIN users u ON cm.user_id = u.id WHERE cm.id = ?',
+        [messageId]
+      );
+
+      if (!message) throw new Error('Mensagem não encontrada');
+
+      const reactionResults = await query<ReactionResult>(
+        `SELECT DISTINCT
+            mr.emoji,
+            (
+                SELECT GROUP_CONCAT(DISTINCT user_id)
+                FROM message_reactions
+                WHERE message_id = ? AND emoji = mr.emoji
+            ) as users
+        FROM message_reactions mr 
+        WHERE mr.message_id = ?`,
+        [messageId, messageId]
+      );
+
+      const reactions = reactionResults || [];
+
+      const updatedMessage = {
+        id: message.id,
+        userId: message.user_id,
+        content: message.content,
+        userName: message.full_name,
+        userRole: message.role || 'Geral',
+        timestamp: message.created_at.toISOString(),
+        reactions: reactions.map((r: ReactionResult) => ({
+          emoji: r.emoji,
+          users: (r.users || '').split(',').filter(Boolean)
+        }))
+      };
+
+      this.emit('messageReacted', updatedMessage);
+      return updatedMessage;
+    } catch (error) {
+      console.error('Erro detalhado ao processar reação:', error);
+      throw error;
+    }
+  }
+
   private async getMessageWithReactions(messageId: string): Promise<CompanyMessage | null> {
     const [message] = await query<CompanyMessageDB>(
-        'SELECT * FROM company_messages WHERE id = ?',
-        [messageId]
+      'SELECT * FROM company_messages WHERE id = ?',
+      [messageId]
     );
 
     if (!message) return null;
 
     const reactions = await query<MessageReactionDB>(
-        'SELECT * FROM message_reactions WHERE message_id = ?',
-        [messageId]
+      'SELECT * FROM message_reactions WHERE message_id = ?',
+      [messageId]
     );
 
     return {
-        id: message.id,
-        userId: message.user_id,
-        content: message.content,
-        userName: message.full_name,
-        userRole: message.role || 'Geral',  // Adicionando o userRole
-        timestamp: message.created_at.toISOString(),
-        reactions: this.groupReactions(reactions)
+      id: message.id,
+      userId: message.user_id,
+      content: message.content,
+      userName: message.full_name,
+      userRole: message.role || 'Geral',
+      timestamp: message.created_at.toISOString(),
+      reactions: this.groupReactions(reactions)
     };
-}
+  }
 
-  private groupReactions(reactions: MessageReactionDB[]): { emoji: string; users: string[]; }[] {
+  private groupReactions(reactions: any[]): { emoji: string; users: string[]; }[] {
+    if (!Array.isArray(reactions)) {
+      reactions = [reactions].filter(Boolean);
+    }
+
     const groupedReactions = new Map<string, string[]>();
 
     reactions.forEach(reaction => {
-      if (!groupedReactions.has(reaction.emoji)) {
-        groupedReactions.set(reaction.emoji, []);
+      if (reaction && reaction.emoji) {
+        if (!groupedReactions.has(reaction.emoji)) {
+          groupedReactions.set(reaction.emoji, []);
+        }
+        groupedReactions.get(reaction.emoji)?.push(reaction.user_id);
       }
-      groupedReactions.get(reaction.emoji)?.push(reaction.user_id);
     });
 
     return Array.from(groupedReactions.entries()).map(([emoji, users]) => ({

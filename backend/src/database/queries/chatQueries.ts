@@ -1,30 +1,30 @@
 // database/queries/chatQueries.ts
 export const chatQueries = {
-    // Chat interno
-    saveCompanyMessage: `
+  // Chat interno
+  saveCompanyMessage: `
         INSERT INTO company_messages (id, user_id, user_role, content)
         VALUES (?, ?, ?, ?)
     `,
 
-    getCompanyMessages: `
+  getCompanyMessages: `
         SELECT cm.*, u.full_name, u.role, u.sector
         FROM company_messages cm
         JOIN users u ON cm.user_id = u.id
         ORDER BY cm.created_at
     `,
 
-    saveMessageReaction: `
+  saveMessageReaction: `
       INSERT INTO message_reactions (message_id, user_id, emoji)
       VALUES (?, ?, ?)
     `,
 
-    // Chat privado
-    savePrivateMessage: `
+  // Chat privado
+  savePrivateMessage: `
       INSERT INTO private_messages (id, from_user_id, to_user_id, content)
       VALUES (?, ?, ?, ?)
     `,
 
-    getPrivateMessages: `
+  getPrivateMessages: `
       SELECT pm.*, 
              u1.full_name as from_name,
              u2.full_name as to_name
@@ -36,32 +36,32 @@ export const chatQueries = {
       ORDER BY pm.created_at
     `,
 
-    // Tickets
-    createTicket: `
+  // Tickets
+  createTicket: `
       INSERT INTO tickets (id, status)
       VALUES (?, ?)
     `,
 
-    saveTicketMessage: `
+  saveTicketMessage: `
       INSERT INTO ticket_messages 
       (id, ticket_id, content, sender_name, sender_username, is_operator)
       VALUES (?, ?, ?, ?, ?, ?)
     `,
 
-    getTicketMessages: `
+  getTicketMessages: `
       SELECT *
       FROM ticket_messages
       WHERE ticket_id = ?
       ORDER BY created_at
     `,
 
-    updateTicketStatus: `
+  updateTicketStatus: `
       UPDATE tickets
       SET status = ?
       WHERE id = ?
     `,
 
-    getAllTickets: `
+  getAllTickets: `
       SELECT t.*, 
              COUNT(tm.id) as message_count,
              MAX(tm.created_at) as last_message_at
@@ -69,5 +69,19 @@ export const chatQueries = {
       LEFT JOIN ticket_messages tm ON t.id = tm.ticket_id
       GROUP BY t.id
       ORDER BY t.updated_at DESC
+    `,
+  saveReaction: `
+        INSERT INTO message_reactions (message_id, user_id, emoji)
+        VALUES (?, ?, ?)
+    `,
+
+  deleteReaction: `
+        DELETE FROM message_reactions 
+        WHERE message_id = ? AND user_id = ? AND emoji = ?
+    `,
+
+  getMessageReactions: `
+        SELECT * FROM message_reactions 
+        WHERE message_id = ?
     `
 };

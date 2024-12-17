@@ -1,52 +1,40 @@
-2024/12/15-00:36:17.813 b203 Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2024/12/15-00:36:17.813 b203 Recovering log #15666
-2024/12/15-00:36:17.815 b203 Reusing old log /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/015666.log 
-2024/12/15-00:36:19.175 15803 Level-0 table #15692: started
-2024/12/15-00:36:19.177 15803 Level-0 table #15692: 56571 bytes OK
-2024/12/15-00:36:19.181 15803 Delete type=0 #15666
-2024/12/15-00:36:19.181 15803 Manual compaction at level-0 from '\x00G\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00H\x00\x00\x00' @ 0 : 0; will stop at '\x00G\x00\x00\x05' @ 30139574 : 1
-2024/12/15-00:36:19.181 15803 Compacting 1@0 + 1@1 files
-2024/12/15-00:36:19.184 15803 Generated table #15693@0: 1110 keys, 22452 bytes
-2024/12/15-00:36:19.185 15803 Generated table #15694@0: 48 keys, 3914 bytes
-2024/12/15-00:36:19.188 15803 Generated table #15695@0: 305 keys, 6739 bytes
-2024/12/15-00:36:19.188 15803 Compacted 1@0 + 1@1 files => 33105 bytes
-2024/12/15-00:36:19.191 15803 compacted to: files[ 0 3 47 0 0 0 0 ]
-2024/12/15-00:36:19.192 15803 Delete type=2 #15692
-2024/12/15-00:36:19.192 15803 Manual compaction at level-0 from '\x00G\x00\x00\x05' @ 30139574 : 1 .. '\x00H\x00\x00\x00' @ 0 : 0; will stop at (end)
-2024/12/15-00:36:19.219 15803 Compacting 1@1 + 7@2 files
-2024/12/15-00:36:19.268 15803 Generated table #15696@1: 35104 keys, 2236793 bytes
-2024/12/15-00:36:19.317 15803 Generated table #15697@1: 24993 keys, 2279713 bytes
-2024/12/15-00:36:19.410 15803 Generated table #15698@1: 24754 keys, 2275484 bytes
-2024/12/15-00:36:19.467 15803 Generated table #15699@1: 25826 keys, 2270223 bytes
-2024/12/15-00:36:19.520 15803 Generated table #15700@1: 28085 keys, 2256350 bytes
-2024/12/15-00:36:19.563 15803 Generated table #15701@1: 26783 keys, 2247098 bytes
-2024/12/15-00:36:19.587 15803 Generated table #15702@1: 8705 keys, 2132642 bytes
-2024/12/15-00:36:19.587 15803 Compacted 1@1 + 7@2 files => 15698303 bytes
-2024/12/15-00:36:19.589 15803 compacted to: files[ 0 2 47 0 0 0 0 ]
-2024/12/15-00:36:19.590 15803 Delete type=2 #15694
-2024/12/15-00:36:19.590 15803 Delete type=2 #15670
-2024/12/15-00:36:19.590 15803 Delete type=2 #15671
-2024/12/15-00:36:19.590 15803 Delete type=2 #15673
-2024/12/15-00:36:19.590 15803 Delete type=2 #15672
-2024/12/15-00:36:19.590 15803 Delete type=2 #15676
-2024/12/15-00:36:19.590 15803 Delete type=2 #15677
-2024/12/15-00:36:19.590 15803 Delete type=2 #15675
-2024/12/15-00:36:19.590 15803 Delete type=2 #15674
-2024/12/15-00:36:19.952 1fb03 Compacting 1@1 + 7@2 files
-2024/12/15-00:36:20.004 1fb03 Generated table #15703@1: 49635 keys, 2205098 bytes
-2024/12/15-00:36:20.057 1fb03 Generated table #15704@1: 58015 keys, 2222309 bytes
-2024/12/15-00:36:20.085 1fb03 Generated table #15705@1: 15167 keys, 2170943 bytes
-2024/12/15-00:36:20.111 1fb03 Generated table #15706@1: 2931 keys, 2163829 bytes
-2024/12/15-00:36:20.143 1fb03 Generated table #15707@1: 2492 keys, 2150823 bytes
-2024/12/15-00:36:20.172 1fb03 Generated table #15708@1: 2583 keys, 2164865 bytes
-2024/12/15-00:36:20.194 1fb03 Generated table #15709@1: 2609 keys, 2164539 bytes
-2024/12/15-00:36:20.194 1fb03 Compacted 1@1 + 7@2 files => 15242406 bytes
-2024/12/15-00:36:20.198 1fb03 compacted to: files[ 0 1 47 0 0 0 0 ]
-2024/12/15-00:36:20.198 1fb03 Delete type=2 #15686
-2024/12/15-00:36:20.198 1fb03 Delete type=2 #15693
-2024/12/15-00:36:20.198 1fb03 Delete type=2 #15687
-2024/12/15-00:36:20.198 1fb03 Delete type=2 #15685
-2024/12/15-00:36:20.198 1fb03 Delete type=2 #15684
-2024/12/15-00:36:20.198 1fb03 Delete type=2 #15683
-2024/12/15-00:36:20.198 1fb03 Delete type=2 #15682
-2024/12/15-00:36:20.198 1fb03 Delete type=2 #15688
+2024/12/16-21:54:09.148 ad03 Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2024/12/16-21:54:09.150 ad03 Recovering log #17732
+2024/12/16-21:54:09.156 ad03 Reusing old log /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/017732.log 
+2024/12/16-21:54:09.157 ad03 Delete type=2 #17697
+2024/12/16-21:54:09.157 ad03 Delete type=2 #17734
+2024/12/16-21:54:09.157 ad03 Delete type=2 #17696
+2024/12/16-21:54:09.157 ad03 Delete type=2 #17694
+2024/12/16-21:54:09.157 ad03 Delete type=2 #17695
+2024/12/16-21:54:10.463 a703 Level-0 table #17767: started
+2024/12/16-21:54:10.467 a703 Level-0 table #17767: 162198 bytes OK
+2024/12/16-21:54:10.471 a703 Delete type=0 #17732
+2024/12/16-21:54:10.471 a703 Manual compaction at level-0 from '\x00k\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00l\x00\x00\x00' @ 0 : 0; will stop at '\x00k\x00\x00\x05' @ 32890934 : 1
+2024/12/16-21:54:10.471 a703 Compacting 1@0 + 1@1 files
+2024/12/16-21:54:10.476 a703 Generated table #17768@0: 3493 keys, 70571 bytes
+2024/12/16-21:54:10.477 a703 Generated table #17769@0: 44 keys, 2717 bytes
+2024/12/16-21:54:10.480 a703 Generated table #17770@0: 401 keys, 8275 bytes
+2024/12/16-21:54:10.480 a703 Compacted 1@0 + 1@1 files => 81563 bytes
+2024/12/16-21:54:10.483 a703 compacted to: files[ 0 3 42 0 0 0 0 ]
+2024/12/16-21:54:10.484 a703 Delete type=2 #17767
+2024/12/16-21:54:10.484 a703 Manual compaction at level-0 from '\x00k\x00\x00\x05' @ 32890934 : 1 .. '\x00l\x00\x00\x00' @ 0 : 0; will stop at (end)
+2024/12/16-21:54:11.817 13e03 Compacting 1@1 + 4@2 files
+2024/12/16-21:54:11.888 13e03 Generated table #17771@1: 85369 keys, 2233762 bytes
+2024/12/16-21:54:11.925 13e03 Generated table #17772@1: 39246 keys, 2198814 bytes
+2024/12/16-21:54:11.989 13e03 Generated table #17773@1: 61016 keys, 2228273 bytes
+2024/12/16-21:54:12.018 13e03 Generated table #17774@1: 9758 keys, 2163913 bytes
+2024/12/16-21:54:12.020 13e03 Generated table #17775@1: 24 keys, 12490 bytes
+2024/12/16-21:54:12.020 13e03 Compacted 1@1 + 4@2 files => 8837252 bytes
+2024/12/16-21:54:12.023 13e03 compacted to: files[ 0 2 43 0 0 0 0 ]
+2024/12/16-21:54:12.024 13e03 Delete type=2 #17737
+2024/12/16-21:54:12.024 13e03 Delete type=2 #17768
+2024/12/16-21:54:12.024 13e03 Delete type=2 #17762
+2024/12/16-21:54:12.024 13e03 Delete type=2 #17763
+2024/12/16-21:54:12.024 13e03 Delete type=2 #17761
+2024/12/16-21:54:12.024 13e03 Delete type=2 #17760
+2024/12/16-21:54:12.674 13e03 Compacting 1@1 + 1@2 files
+2024/12/16-21:54:12.702 13e03 Generated table #17776@1: 12547 keys, 2187192 bytes
+2024/12/16-21:54:12.702 13e03 Compacted 1@1 + 1@2 files => 2187192 bytes
+2024/12/16-21:54:12.704 13e03 compacted to: files[ 0 1 43 0 0 0 0 ]
+2024/12/16-21:54:12.705 13e03 Delete type=2 #17769
+2024/12/16-21:54:12.705 13e03 Delete type=2 #17749

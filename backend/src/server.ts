@@ -194,15 +194,15 @@ socketServer.on('connection', (socket) => {
     });
 
     socket.on('addReaction', async ({ messageId, emoji, userId, userName }) => {
-        const updatedMessage = await companyChatService.addReaction(
-            messageId,
-            userId,
-            userName,
-            emoji
-        );
-
-        if (updatedMessage) {
+        console.log('Tentando adicionar reação:', { messageId, emoji, userId, userName });
+        try {
+            const updatedMessage = await chatService.addReaction(messageId, userId, userName, emoji);
             socketServer.emit('messageReacted', updatedMessage);
+        } catch (error) {
+            console.error('Erro ao adicionar reação:', error);
+            socket.emit('messageError', {
+                error: 'Não foi possível adicionar a reação'
+            });
         }
     });
 
