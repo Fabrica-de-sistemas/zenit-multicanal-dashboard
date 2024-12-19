@@ -42,38 +42,46 @@ class ChatService extends EventEmitter {
   }
 
   async getHistory(): Promise<CompanyMessage[]> {
-    const messages = await query<CompanyMessageDB>(chatQueries.getCompanyMessages);
+    try {
+      const messages = await query<CompanyMessageDB>(chatQueries.getCompanyMessages);
 
-    const messagesWithReactions = await Promise.all(
-      messages.map(async (msg) => {
-        const [reactionResults] = await query(
-          `SELECT 
-                    mr.emoji,
-                    GROUP_CONCAT(DISTINCT mr.user_id) as users
-                FROM message_reactions mr 
-                WHERE mr.message_id = ?
-                GROUP BY mr.emoji`,
-          [msg.id]
-        );
+      const messagesWithReactions = await Promise.all(
+        messages.map(async (msg) => {
+          const reactionResults = await query<ReactionResult>(
+            `SELECT DISTINCT
+                        mr.emoji,
+                        (
+                            SELECT GROUP_CONCAT(DISTINCT user_id)
+                            FROM message_reactions
+                            WHERE message_id = ? AND emoji = mr.emoji
+                        ) as users
+                    FROM message_reactions mr 
+                    WHERE mr.message_id = ?`,
+            [msg.id, msg.id]
+          );
 
-        const reactions = Array.isArray(reactionResults) ? reactionResults : [reactionResults].filter(Boolean);
+          const reactions = reactionResults || [];
 
-        return {
-          id: msg.id,
-          userId: msg.user_id,
-          content: msg.content,
-          userName: msg.full_name,
-          userRole: msg.role || 'Geral',
-          timestamp: msg.created_at.toISOString(),
-          reactions: reactions.map(r => ({
-            emoji: r.emoji,
-            users: (r.users || '').split(',').filter(Boolean)
-          }))
-        };
-      })
-    );
+          return {
+            id: msg.id,
+            userId: msg.user_id,
+            content: msg.content,
+            userName: msg.full_name,
+            userRole: msg.role || 'Geral',
+            timestamp: msg.created_at.toISOString(),
+            reactions: reactions.map((r: ReactionResult) => ({
+              emoji: r.emoji,
+              users: (r.users || '').split(',').filter(Boolean)
+            }))
+          };
+        })
+      );
 
-    return messagesWithReactions;
+      return messagesWithReactions;
+    } catch (error) {
+      console.error('Erro ao buscar histórico:', error);
+      throw error;
+    }
   }
 
   async addMessage(message: CompanyMessage): Promise<CompanyMessage> {
