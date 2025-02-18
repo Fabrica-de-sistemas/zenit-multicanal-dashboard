@@ -2,6 +2,8 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query, execute, User } from '../lib/db';
+import { sectorPermissions } from '../config/permissions';
+import { Permission } from '../config/permissions';
 import { RegisterData, LoginData, AuthResponse } from '../types/auth';
 import { authQueries } from '../database/queries/authQueries';
 
@@ -39,10 +41,10 @@ export class AuthService {
       );
 
       const token = jwt.sign(
-        { 
-          userId: newUser.id, 
+        {
+          userId: newUser.id,
           email: newUser.email,
-          role: newUser.role 
+          role: newUser.role
         },
         process.env.JWT_SECRET || 'fallback_secret',
         { expiresIn: '24h' }
@@ -82,10 +84,10 @@ export class AuthService {
       }
 
       const token = jwt.sign(
-        { 
-          userId: user.id, 
+        {
+          userId: user.id,
           email: user.email,
-          role: user.role 
+          role: user.role
         },
         process.env.JWT_SECRET || 'fallback_secret',
         { expiresIn: '24h' }
@@ -122,6 +124,21 @@ export class AuthService {
       console.error('Erro ao buscar perfil:', error);
       throw error;
     }
+  }
+
+  async getUserPermissions(userId: string): Promise<Permission[]> {
+    // Busca permissões do setor
+    const [user] = await query('SELECT sector FROM users WHERE id = ?', [userId]);
+    const sectorPerms = sectorPermissions[user.sector] || [];
+
+    // Busca permissões customizadas
+    const customPerms = await query(
+      'SELECT permission FROM custom_permissions WHERE user_id = ?',
+      [userId]
+    );
+
+    // Combina as permissões
+    return [...new Set([...sectorPerms, ...customPerms.map(p => p.permission)])];
   }
 }
 

@@ -38,26 +38,17 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      setIsLoading(true);
-      setError('');
-
-      await authService.login(data);
-      
-      // Verifica se o login foi bem-sucedido
-      if (authService.isAuthenticated()) {
-        const user = authService.getUser();
-        console.log('Usuário logado:', user);
-        router.push('/dashboard');
-      } else {
-        throw new Error('Erro ao autenticar usuário');
-      }
-    } catch (err) {
-      console.error('Erro ao fazer login:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
-    } finally {
-      setIsLoading(false);
+        const response = await authService.login(data);
+        
+        if (response.token) {
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('userData', JSON.stringify(response.user));
+            router.push('/dashboard');
+        }
+    } catch (error) {
+        setError(error instanceof Error ? error.message : 'Erro ao fazer login');
     }
-  };
+};
 
   return (
     <Card className="w-full max-w-md">

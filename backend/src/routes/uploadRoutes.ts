@@ -49,7 +49,7 @@ router.post('/upload', upload.single('file'), (req: Request, res: Response): voi
             return;
         }
 
-        const fileUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+        const fileUrl = `http://localhost:8080/uploads/${req.file.filename}`;
 
         res.json({
             fileUrl,

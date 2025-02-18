@@ -1,54 +1,85 @@
 // frontend/hooks/useSocket.ts
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
-
-let globalSocket: Socket | null = null; // Variável global para manter uma única conexão
 
 export function useSocket() {
     const socketRef = useRef<Socket | null>(null);
+    const [token, setToken] = useState<string | null>(null);
 
     useEffect(() => {
-        // Se já existe uma conexão global, usa ela
-        if (globalSocket) {
-            socketRef.current = globalSocket;
-            return;
+        // Inicializa o token depois que o componente montar (cliente)
+        const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        setToken(storedToken);
+
+        // Atualiza o token sempre que mudar no localStorage
+        const handleStorageChange = () => {
+            const newToken = localStorage.getItem('token');
+            setToken(newToken);
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('storage', handleStorageChange);
         }
 
-        const token = localStorage.getItem('token');
+        // Socket connection logic ...
+        if (storedToken) {
+            try {
+                // Desconecta socket existente se houver
+                if (socketRef.current) {
+                    console.log('Desconectando socket existente...');
+                    socketRef.current.disconnect();
+                    socketRef.current = null;
+                }
 
-        const newSocket = io('http://localhost:5000', {
-            reconnectionDelayMax: 10000,
-            reconnection: true,
-            reconnectionAttempts: 10,
-            transports: ['websocket', 'polling'],
-            auth: {
-                token
-            },
-            withCredentials: true,
-            timeout: 10000
-        });
+                // Cria novo socket
+                console.log('Criando nova conexão socket...');
+                socketRef.current = io('http://localhost:8080', {
+                    auth: {
+                        token: storedToken
+                    },
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000,
+                    transports: ['polling', 'websocket']
+                });
 
-        newSocket.on('connect', () => {
-            console.log('Socket conectado com sucesso ao servidor');
-        });
+                socketRef.current.on('connect', () => {
+                    console.log('Socket conectado com sucesso');
+                });
 
-        newSocket.on('connect_error', (error) => {
-            if (error.message !== 'websocket error') {
-                console.error('Erro de conexão Socket.IO:', error.message);
+                socketRef.current.on('connect_error', (error) => {
+                    console.error('Erro de conexão Socket.IO:', error.message);
+                    
+                    if (error.message.includes('Authentication error')) {
+                        if (typeof window !== 'undefined') {
+                            localStorage.removeItem('token');
+                            window.location.href = '/login';
+                        }
+                        setToken(null);
+                    }
+                });
+
+                socketRef.current.on('disconnect', (reason) => {
+                    console.log('Socket desconectado. Razão:', reason);
+                });
+
+                socketRef.current.on('error', (error) => {
+                    console.error('Erro no socket:', error);
+                });
+            } catch (error) {
+                console.error('Erro ao criar socket:', error);
             }
-        });
+        }
 
-        newSocket.on('disconnect', (reason) => {
-            console.log('Socket desconectado:', reason);
-        });
-
-        // Armazena o socket globalmente
-        globalSocket = newSocket;
-        socketRef.current = newSocket;
-
-        // Cleanup apenas quando a aplicação for fechada
         return () => {
-            // Não fechamos a conexão aqui mais
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('storage', handleStorageChange);
+            }
+            if (socketRef.current) {
+                console.log('Limpando socket na desmontagem do componente');
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
         };
     }, []);
 

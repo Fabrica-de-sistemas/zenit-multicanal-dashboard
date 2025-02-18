@@ -1,3 +1,4 @@
+// frontend\components\chat\ChatSidebar.tsx
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { OnlineUsersList } from './OnlineUsersList';

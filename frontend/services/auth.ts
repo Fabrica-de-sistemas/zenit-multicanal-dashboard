@@ -3,7 +3,7 @@ import axios from 'axios';
 import { RegisterData, LoginData, AuthResponse } from '@/types/auth';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'http://localhost:8080/api',
   headers: {
     'Content-Type': 'application/json'
   }

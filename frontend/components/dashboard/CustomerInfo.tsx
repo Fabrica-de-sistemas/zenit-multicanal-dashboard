@@ -1,3 +1,4 @@
+// frontend\components\dashboard\CustomerInfo.tsx
 import React from 'react';
 import { Instagram, Twitter, Facebook, MessageSquare, MessageCircle } from 'lucide-react';
 import { Ticket } from '@/types/chat';

@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
+import jwt from 'jsonwebtoken';
 import authRoutes from './routes/authRoutes';
 import messageRoutes from './routes/messageRoutes';
 import WhatsAppService from './services/WhatsAppService';
@@ -10,12 +11,16 @@ import CompanyChatService from './services/CompanyChatService';
 import uploadRoutes from './routes/uploadRoutes';
 import adminRoutes from './routes/adminRoutes';
 import ChatService from './services/ChatService';
+import { permissionController } from './controllers/permissionController';
+import PermissionService from './services/PermissionService';
+import { Permission } from './config/permissions';
 import path from 'path';
 
 const app = express();
 const httpServer = createServer(app);
 const userConnections = new Map<string, string>(); // userId -> socketId
 const chatService = ChatService.getInstance();
+const permissionService = PermissionService.getInstance();
 
 // Configuração do CORS
 app.use(cors({
@@ -26,18 +31,21 @@ app.use(cors({
 }));
 
 // Criação do servidor Socket.IO
-const socketServer = new SocketServer(httpServer, {
+const io = new SocketServer(httpServer, {
     cors: {
         origin: 'http://localhost:3000',
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true
     },
+    transports: ['polling', 'websocket'],
     allowEIO3: true,
-    transports: ['websocket', 'polling'],
     pingTimeout: 60000,
     pingInterval: 25000
 });
+
+
+// Disponibiliza o io para uso em outros arquivos
+app.set('io', io);
 
 app.use(express.json());
 
@@ -65,9 +73,48 @@ app.use('/api/admin', adminRoutes);
 const whatsappService = WhatsAppService.getInstance();
 const companyChatService = CompanyChatService.getInstance();
 
+// Middleware de autenticação para Socket.IO
+io.use(async (socket, next) => {
+    try {
+        const token = socket.handshake.auth.token;
+
+        if (!token) {
+            return next(new Error('Token não fornecido'));
+        }
+
+        jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        next();
+    } catch (error) {
+        console.error('Erro de autenticação:', error);
+        next(new Error('Token inválido'));
+    }
+});
+
 // Configuração do Socket.IO
-socketServer.on('connection', (socket) => {
+io.on('connection', (socket) => {
     console.log('Cliente conectado:', socket.id);
+
+    // Eventos de Permissões
+    socket.on('requestPermissions', async (userId: string) => {
+        try {
+            const permissions = await permissionController.calculateEffectivePermissions(userId);
+            socket.emit('permissionsUpdated', { userId, permissions });
+        } catch (error) {
+            console.error('Erro ao buscar permissões:', error);
+        }
+    });
+
+    socket.on('requestUserPermissions', async (userId: string) => {
+        const permissions = await permissionService.loadUserPermissions(userId);
+        socket.emit('userPermissionsUpdated', { userId, permissions });
+    });
+
+    socket.on('updateUserPermissions', async ({ userId, permissions }) => {
+        const success = await permissionService.updateUserPermissions(userId, permissions);
+        if (success) {
+            // O evento será emitido pelo serviço
+        }
+    });
 
     // Envio inicial de tickets do WhatsApp
     const tickets = whatsappService.getAllTickets();
@@ -78,7 +125,7 @@ socketServer.on('connection', (socket) => {
     socket.on('getChatHistory', async () => {
         try {
             console.log('Solicitação de histórico do chat interno');
-            const messages = await chatService.getHistory(); // Usa o chatService em vez do companyChatService
+            const messages = await chatService.getHistory();
             console.log('Enviando histórico:', messages.length, 'mensagens');
             socket.emit('chatHistory', messages);
         } catch (error) {
@@ -117,7 +164,7 @@ socketServer.on('connection', (socket) => {
         });
 
         // Emite a lista atualizada para todos
-        socketServer.emit('onlineUsers', companyChatService.getOnlineUsers());
+        io.emit('onlineUsers', companyChatService.getOnlineUsers());
     });
 
     // Evento para atualização de status do usuário
@@ -125,7 +172,7 @@ socketServer.on('connection', (socket) => {
         console.log('Atualizando status do usuário:', { userId, status });
         const updatedUser = companyChatService.updateUserStatus(userId, status);
         if (updatedUser) {
-            socketServer.emit('onlineUsers', companyChatService.getOnlineUsers());
+            io.emit('onlineUsers', companyChatService.getOnlineUsers());
         }
     });
 
@@ -150,7 +197,7 @@ socketServer.on('connection', (socket) => {
             const newMessage = await companyChatService.addPrivateMessage(messageData);
 
             // Emite para todos (incluindo o remetente e o destinatário)
-            socketServer.emit('newPrivateMessage', newMessage);
+            io.emit('newPrivateMessage', newMessage);
 
             console.log('Mensagem privada enviada com sucesso');
         } catch (error) {
@@ -183,7 +230,7 @@ socketServer.on('connection', (socket) => {
 
             // Usa o ChatService para mensagens internas
             const newMessage = await chatService.addMessage(messageData);
-            socketServer.emit('newMessage', newMessage);
+            io.emit('newMessage', newMessage);
             console.log('Mensagem do chat interno enviada com sucesso');
         } catch (error) {
             console.error('Erro ao processar mensagem do chat interno:', error);
@@ -197,7 +244,7 @@ socketServer.on('connection', (socket) => {
         console.log('Tentando adicionar reação:', { messageId, emoji, userId, userName });
         try {
             const updatedMessage = await chatService.addReaction(messageId, userId, userName, emoji);
-            socketServer.emit('messageReacted', updatedMessage);
+            io.emit('messageReacted', updatedMessage);
         } catch (error) {
             console.error('Erro ao adicionar reação:', error);
             socket.emit('messageError', {
@@ -249,17 +296,22 @@ socketServer.on('connection', (socket) => {
         // Remove usuário da lista de online mas mantém o status
         companyChatService.removeOnlineUser(socket.id);
         // Emite lista atualizada para todos
-        socketServer.emit('onlineUsers', companyChatService.getOnlineUsers());
+        io.emit('onlineUsers', companyChatService.getOnlineUsers());
     });
 });
 
 // Listener para updates de tickets do WhatsApp
 whatsappService.on('ticketUpdated', (ticket) => {
     console.log('Emitindo atualização de ticket para todos os clientes:', ticket.id);
-    socketServer.emit('ticketUpdated', ticket);
+    io.emit('ticketUpdated', ticket);
 });
 
-const PORT = process.env.PORT || 5000;
+// Listener para atualizações de permissões
+permissionService.on('permissionsUpdated', (data: { userId: string; permissions: Permission[] }) => {
+    io.emit('userPermissionsUpdated', data);
+});
+
+const PORT = process.env.PORT || 8080;
 
 // Inicia o servidor
 httpServer.listen(PORT, () => {

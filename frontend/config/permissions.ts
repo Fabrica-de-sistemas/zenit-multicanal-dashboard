@@ -9,6 +9,17 @@ export type Permission =
   | 'manage_financial_reports'
   | 'view_hr_data';
 
+export const VALID_PERMISSIONS = [
+  'view_tickets',
+  'manage_tickets',
+  'view_chat',
+  'manage_users',
+  'view_marketing_analytics',
+  'manage_marketing_campaigns',
+  'manage_financial_reports',
+  'view_hr_data'
+] as const;
+
 export const sectorPermissions: Record<string, Permission[]> = {
   'Suporte': [
     'view_tickets',

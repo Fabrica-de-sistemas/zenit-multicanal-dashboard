@@ -1,7 +1,8 @@
 // backend/src/middleware/permissionMiddleware.ts
 import { Request, Response, NextFunction } from 'express';
 import { AuthRequest } from './authMiddleware';
-import { Permission, sectorPermissions, adminPermissions } from '../config/permissions';
+import { Permission, sectorPermissions } from '../config/permissions';
+import { query } from '../lib/db';
 
 export const requirePermission = (requiredPermission: Permission) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -10,21 +11,29 @@ export const requirePermission = (requiredPermission: Permission) => {
         return res.status(401).json({ error: 'Não autorizado' });
       }
 
-      // Admins têm todas as permissões
+      // Se for admin, tem todas as permissões
       if (req.user.role === 'ADMIN') {
         return next();
       }
 
-      // Verifica se o setor existe e tem permissões
+      const userId = req.user.userId;
       const userSector = req.user.sector || '';
-      const sectorPerms = sectorPermissions[userSector];
-      
-      if (!sectorPerms) {
-        return res.status(403).json({ error: 'Setor não tem permissões definidas' });
-      }
 
-      // Verifica se o setor tem a permissão necessária
-      if (!sectorPerms.includes(requiredPermission)) {
+      // Busca permissões customizadas do usuário
+      const [customPermissions] = await query(
+        'SELECT permissions FROM user_permissions WHERE user_id = ?',
+        [userId]
+      );
+
+      // Combina permissões do setor com permissões customizadas
+      const sectorPerms = sectorPermissions[userSector] || [];
+      const userCustomPerms = customPermissions ? JSON.parse(customPermissions.permissions) : [];
+
+      // As permissões customizadas SUBSTITUEM as permissões do setor
+      // Se uma permissão está em userCustomPerms, ela sobrescreve a do setor
+      const effectivePermissions = userCustomPerms;
+
+      if (!effectivePermissions.includes(requiredPermission)) {
         return res.status(403).json({ error: 'Acesso negado' });
       }
 

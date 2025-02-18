@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, User, CreditCard, Eye, EyeOff } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { sectorRoles } from '@/utils/roleConfig';
 
 interface FormData {
   fullName: string;
@@ -12,6 +13,8 @@ interface FormData {
   registration: string;
   password: string;
   confirmPassword: string;
+  sector: string;
+  role: string;
 }
 
 interface PasswordRequirement {
@@ -49,7 +52,9 @@ export function RegisterForm() {
     email: '',
     registration: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    sector: '',
+    role: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -78,6 +83,14 @@ export function RegisterForm() {
     if (!formData.email.includes('@')) {
       newErrors.email = 'Email inválido';
     }
+    
+    if (!formData.sector) {
+      newErrors.sector = 'Setor é obrigatório';
+    }
+    
+    if (!formData.role) {
+      newErrors.role = 'Cargo é obrigatório';
+    }
 
     if (!formData.registration.trim()) {
       newErrors.registration = 'Matrícula é obrigatória';
@@ -97,7 +110,7 @@ export function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -107,12 +120,14 @@ export function RegisterForm() {
 
     try {
       console.log('1. Iniciando processo de registro...');
-      
+
       const dataToSend = {
         fullName: formData.fullName,
         email: formData.email,
         registration: formData.registration,
-        password: formData.password
+        password: formData.password,
+        sector: formData.sector,    // Adicionado
+        role: formData.role         // Adicionado
       };
 
       console.log('2. Dados a serem enviados:', {
@@ -120,7 +135,7 @@ export function RegisterForm() {
         password: '[PROTEGIDO]'
       });
 
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch('http://localhost:8080/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +162,9 @@ export function RegisterForm() {
         email: '',
         registration: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        sector: '',
+        role: ''
       });
 
       console.log('5. Registro concluído com sucesso');
@@ -167,11 +184,10 @@ export function RegisterForm() {
   return (
     <>
       {message && (
-        <div className={`p-4 mb-4 rounded-md ${
-          message.type === 'success' 
-            ? 'bg-green-50 text-green-700 border border-green-200' 
+        <div className={`p-4 mb-4 rounded-md ${message.type === 'success'
+            ? 'bg-green-50 text-green-700 border border-green-200'
             : 'bg-red-50 text-red-700 border border-red-200'
-        }`}>
+          }`}>
           {message.text}
         </div>
       )}
@@ -211,6 +227,55 @@ export function RegisterForm() {
             <p className="text-sm text-red-500">{errors.email}</p>
           )}
         </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Setor</label>
+          <div className="relative">
+            <select
+              name="sector"
+              value={formData.sector}
+              onChange={(e) => setFormData({ ...formData, sector: e.target.value, role: '' })}
+              className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecione um setor</option>
+              <option value="Desenvolvimento">Desenvolvimento</option>
+              <option value="Design">Design</option>
+              <option value="Marketing">Marketing</option>
+              <option value="RH">RH</option>
+              <option value="Financeiro">Financeiro</option>
+              <option value="Comercial">Comercial</option>
+              <option value="Suporte">Suporte</option>
+              <option value="Geral">Geral</option>
+            </select>
+          </div>
+          {errors.sector && (
+            <p className="text-sm text-red-500">{errors.sector}</p>
+          )}
+        </div>
+
+        {formData.sector && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Cargo</label>
+            <div className="relative">
+              <select
+                name="role"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Selecione um cargo</option>
+                {sectorRoles[formData.sector as keyof typeof sectorRoles]?.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {errors.role && (
+              <p className="text-sm text-red-500">{errors.role}</p>
+            )}
+          </div>
+        )}
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Matrícula</label>
@@ -253,48 +318,47 @@ export function RegisterForm() {
               )}
             </button>
           </div>
-          
+
           {/* Requisitos da senha */}
           <div className="mt-2 space-y-2 text-sm">
             {getPasswordRequirements(formData.password).map((requirement, index) => (
-              <div 
-                key={index} 
-                className={`flex items-center space-x-2 ${
-                  formData.password ? (requirement.met ? 'text-green-600' : 'text-gray-600') : 'text-gray-600'
-                }`}
+              <div
+                key={index}
+                className={`flex items-center space-x-2 ${formData.password ? (requirement.met ? 'text-green-600' : 'text-gray-600') : 'text-gray-600'
+                  }`}
               >
                 {formData.password ? (
                   requirement.met ? (
-                    <svg 
-                      className="w-4 h-4 text-green-600" 
-                      fill="none" 
-                      strokeWidth="2" 
-                      stroke="currentColor" 
+                    <svg
+                      className="w-4 h-4 text-green-600"
+                      fill="none"
+                      strokeWidth="2"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
                   ) : (
-                    <svg 
-                      className="w-4 h-4 text-gray-400" 
-                      fill="none" 
-                      strokeWidth="2" 
-                      stroke="currentColor" 
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      strokeWidth="2"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <circle cx="12" cy="12" r="10" />
                     </svg>
                   )
                 ) : (
-                  <svg 
-                    className="w-4 h-4 text-gray-400" 
-                    fill="none" 
-                    strokeWidth="2" 
-                    stroke="currentColor" 
+                  <svg
+                    className="w-4 h-4 text-gray-400"
+                    fill="none"
+                    strokeWidth="2"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
                     <circle cx="12" cy="12" r="10" />
@@ -304,7 +368,7 @@ export function RegisterForm() {
               </div>
             ))}
           </div>
-          
+
           {errors.password && (
             <p className="text-sm text-red-500">{errors.password}</p>
           )}

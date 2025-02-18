@@ -2,9 +2,10 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken'; // Correção aqui
+import jwt from 'jsonwebtoken';
 import { query, execute } from '../lib/db';
 import { authQueries } from '../database/queries/authQueries';
+import { permissionController } from './permissionController';
 
 export const authController = {
   async register(req: Request, res: Response) {
@@ -49,7 +50,7 @@ export const authController = {
 
       try {
         console.log('Tentando criar usuário no banco...');
-        const result = await execute(
+        await execute(
           `
          INSERT INTO users (full_name, email, registration, password, role, sector)
          VALUES (?, ?, ?, ?, ?, ?)
@@ -57,24 +58,40 @@ export const authController = {
           [fullName, email, registration, hashedPassword, role, sector]
         );
 
-        const userId = result.insertId;
-        console.log('Usuário criado com sucesso. ID:', userId);
+        // Alteração principal aqui: buscar o usuário pelo email após criação
+        console.log('Buscando usuário criado pelo email...');
+        const [newUser] = await query(
+          'SELECT * FROM users WHERE email = ? ORDER BY created_at DESC LIMIT 1',
+          [email]
+        );
 
-        console.log('Buscando usuário atualizado...');
-        const users = await query(authQueries.findById, [userId]);
-
-        if (users.length === 0) {
+        if (!newUser) {
           throw new Error('Erro ao recuperar usuário criado');
         }
 
-        const newUser = users[0];
+        // Calcula permissões efetivas para o novo usuário
+        const effectivePermissions = await permissionController.calculateEffectivePermissions(newUser.id);
 
         const token = jwt.sign(
           {
             userId: newUser.id,
-            email: newUser.email
+            email: newUser.email,
+            role: newUser.role,
+            sector: newUser.sector,
+            permissions: effectivePermissions
           },
-          process.env.JWT_SECRET || 'fallback_secret'
+          process.env.JWT_SECRET || 'fallback_secret',
+          { expiresIn: '24h' }
+        );
+
+        // Cria uma sessão ativa para o novo usuário
+        await execute(
+          'INSERT INTO active_sessions (user_id, token, expires_at) VALUES (?, ?, ?)',
+          [
+            newUser.id,
+            token,
+            new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 horas
+          ]
         );
 
         console.log('Token JWT gerado com sucesso');
@@ -87,7 +104,8 @@ export const authController = {
             fullName: newUser.full_name,
             email: newUser.email,
             role: newUser.role,
-            sector: newUser.sector
+            sector: newUser.sector,
+            permissions: effectivePermissions
           },
           token
         });
@@ -145,10 +163,37 @@ export const authController = {
         return res.status(401).json({ error: 'Email ou senha inválidos' });
       }
 
+      // Calcula permissões efetivas para o usuário
+      console.log('Calculando permissões efetivas...');
+      const effectivePermissions = await permissionController.calculateEffectivePermissions(user.id);
+
       console.log('Gerando token JWT...');
       const token = jwt.sign(
-        { userId: user.id, email: user.email },
-        process.env.JWT_SECRET || 'fallback_secret'
+        {
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+          sector: user.sector,
+          permissions: effectivePermissions
+        },
+        process.env.JWT_SECRET || 'fallback_secret',
+        { expiresIn: '24h' }
+      );
+
+      // Remove sessões antigas do usuário
+      await execute(
+        'DELETE FROM active_sessions WHERE user_id = ?',
+        [user.id]
+      );
+
+      // Cria uma nova sessão ativa
+      await execute(
+        'INSERT INTO active_sessions (user_id, token, expires_at) VALUES (?, ?, ?)',
+        [
+          user.id,
+          token,
+          new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 horas
+        ]
       );
 
       console.log('Login realizado com sucesso');
@@ -160,7 +205,8 @@ export const authController = {
           fullName: user.full_name,
           email: user.email,
           role: user.role,
-          sector: user.sector
+          sector: user.sector,
+          permissions: effectivePermissions
         },
         token
       });
@@ -172,6 +218,7 @@ export const authController = {
       });
     }
   },
+
 
   async getProfile(req: AuthRequest, res: Response) {
     try {
@@ -195,6 +242,8 @@ export const authController = {
       }
 
       const user = users[0];
+      const effectivePermissions = await permissionController.calculateEffectivePermissions(userId);
+
       console.log('Perfil recuperado com sucesso');
       console.log('=== FIM DA BUSCA DE PERFIL ===\n');
 
@@ -204,6 +253,7 @@ export const authController = {
         email: user.email,
         role: user.role,
         sector: user.sector,
+        permissions: effectivePermissions,
         createdAt: user.created_at,
         updatedAt: user.updated_at
       });
@@ -245,6 +295,22 @@ export const authController = {
         }
 
         const user = users[0];
+        // Recalcula permissões após mudança de setor
+        const effectivePermissions = await permissionController.calculateEffectivePermissions(userId);
+
+        // Gera novo token com setor e permissões atualizadas
+        const token = jwt.sign(
+          {
+            userId: user.id,
+            email: user.email,
+            role: user.role,
+            sector: sector,
+            permissions: effectivePermissions
+          },
+          process.env.JWT_SECRET || 'fallback_secret',
+          { expiresIn: '24h' }
+        );
+
         console.log('Setor atualizado com sucesso');
         console.log('=== FIM DA ATUALIZAÇÃO DE SETOR ===\n');
 
@@ -253,7 +319,8 @@ export const authController = {
           fullName: user.full_name,
           email: user.email,
           role: user.role,
-          sector: user.sector
+          sector: user.sector,
+          token
         });
 
       } catch (dbError) {

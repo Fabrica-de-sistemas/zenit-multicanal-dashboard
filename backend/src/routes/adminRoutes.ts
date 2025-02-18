@@ -1,6 +1,7 @@
 // backend/src/routes/adminRoutes.ts
 import express, { Router, Request, Response, NextFunction } from 'express';
 import { adminController } from '../controllers/adminController';
+import { permissionController } from '../controllers/permissionController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { adminMiddleware } from '../middleware/adminMiddleware';
 
@@ -12,8 +13,7 @@ type AsyncRequestHandler = (
   next: NextFunction
 ) => Promise<void>;
 
-// Wrapper function para converter handlers async para o formato esperado
-const asyncHandler = (handler: AsyncRequestHandler) => {
+const asyncHandler = (handler: Function) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       await handler(req, res, next);
@@ -41,36 +41,28 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Rotas de usuários
-router.get('/users', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    console.log('Rota GET /users acessada');
-    console.log('Request headers:', req.headers);
+router.get('/users', asyncHandler(adminController.listUsers));
+router.post('/users', asyncHandler(adminController.createUser));
+router.put('/users/:id', asyncHandler(adminController.updateUser));
+router.delete('/users/:id', asyncHandler(adminController.deleteUser));
+router.put('/users/:id/status', asyncHandler(adminController.updateUserStatus));
+router.put('/users/:id/role', asyncHandler(adminController.updateUserRole));
 
-    await adminController.listUsers(req, res);
-  } catch (error) {
-    console.error('Erro na rota /users:', error);
-    next(error);
-  }
-});
-
-router.post('/users', asyncHandler(async (req, res) => {
-  await adminController.createUser(req, res);
+// Rotas de permissões
+router.get('/permissions/sectors', asyncHandler(async (req: Request, res: Response) => {
+  await permissionController.getAllSectorPermissions(req, res);
 }));
 
-router.put('/users/:id', asyncHandler(async (req, res) => {
-  await adminController.updateUser(req, res);
+router.put('/permissions/sectors/:sector', asyncHandler(async (req: Request, res: Response) => {
+  await (permissionController as any).updateSectorPermissions(req, res);
 }));
 
-router.delete('/users/:id', asyncHandler(async (req, res) => {
-  await adminController.deleteUser(req, res);
+router.get('/permissions/users/:userId', asyncHandler(async (req: Request, res: Response) => {
+  await permissionController.getUserPermissions(req, res);
 }));
 
-router.put('/users/:id/status', asyncHandler(async (req, res) => {
-  await adminController.updateUserStatus(req, res);
-}));
-
-router.put('/users/:id/role', asyncHandler(async (req, res) => {
-  await adminController.updateUserRole(req, res);
+router.put('/permissions/users/:userId', asyncHandler(async (req: Request, res: Response) => {
+  await permissionController.updateUserCustomPermissions(req, res);
 }));
 
 export default router;

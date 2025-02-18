@@ -1,4 +1,4 @@
-// hooks/useAuth.ts
+// frontend\hooks\useAuth.ts
 'use client'
 import { useState, useEffect } from 'react';
 import { useSocket } from '@/hooks/useSocket';

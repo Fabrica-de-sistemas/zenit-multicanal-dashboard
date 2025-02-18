@@ -75,7 +75,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
     setIsLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/users/${user.id}`, {
+      const response = await fetch(`http://localhost:8080/api/admin/users/${user.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

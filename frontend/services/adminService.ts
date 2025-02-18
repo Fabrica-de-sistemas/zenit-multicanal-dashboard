@@ -7,7 +7,7 @@ export const adminService = {
         throw new Error('Token não encontrado');
       }
 
-      const response = await fetch('http://localhost:5000/api/admin/users', {
+      const response = await fetch('http://localhost:8080/api/admin/users', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -31,7 +31,7 @@ export const adminService = {
 
 async function fetchUsers() {
   try {
-    const response = await fetch('http://localhost:5000/api/admin/users', {
+    const response = await fetch('http://localhost:8080/api/admin/users', {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
         'Content-Type': 'application/json'

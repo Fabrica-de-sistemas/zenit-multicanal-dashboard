@@ -1,3 +1,4 @@
+// backend\src\types\auth.ts
 export interface JWTPayload {
   userId: string;
   email: string;

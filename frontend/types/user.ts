@@ -1,10 +1,11 @@
-// frontend/src/types/user.ts
+// frontend/types/user.ts
+import { Permission } from '@/config/permissions';
+
 export interface User {
     id: string;
     fullName: string;
     email: string;
     role: string;
     sector: string;
-    createdAt?: string;
-    updatedAt?: string;
-  }
+    permissions?: Permission[];
+}

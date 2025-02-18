@@ -41,7 +41,7 @@ export const ChatInput = () => {
     formData.append('file', file);
 
     try {
-      const response = await fetch('http://localhost:5000/api/upload', {
+      const response = await fetch('http://localhost:8080/api/upload', {
         method: 'POST',
         body: formData
       });
