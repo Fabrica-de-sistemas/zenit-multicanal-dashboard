@@ -1,6 +1,6 @@
-2025/02/19-19:01:50.481 13bc Reusing MANIFEST C:\Users\dougl\OneDrive\Área de Trabalho\Projetos\zenit-multicanal-dashboard\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/MANIFEST-000001
-2025/02/19-19:01:50.494 13bc Recovering log #54
-2025/02/19-19:01:50.494 13bc Reusing old log C:\Users\dougl\OneDrive\Área de Trabalho\Projetos\zenit-multicanal-dashboard\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/000054.log 
-2025/02/19-20:10:54.229 3d50 Level-0 table #59: started
-2025/02/19-20:10:54.232 3d50 Level-0 table #59: 21898 bytes OK
-2025/02/19-20:10:54.233 3d50 Delete type=0 #54
+2025/02/20-19:33:21.891 2230 Reusing MANIFEST C:\Users\dougl\OneDrive\Área de Trabalho\Projetos\zenit-multicanal-dashboard\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/MANIFEST-000001
+2025/02/20-19:33:21.905 2230 Recovering log #58
+2025/02/20-19:33:21.905 2230 Reusing old log C:\Users\dougl\OneDrive\Área de Trabalho\Projetos\zenit-multicanal-dashboard\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/000058.log 
+2025/02/20-19:37:25.662 2890 Level-0 table #62: started
+2025/02/20-19:37:25.665 2890 Level-0 table #62: 21806 bytes OK
+2025/02/20-19:37:25.666 2890 Delete type=0 #58
