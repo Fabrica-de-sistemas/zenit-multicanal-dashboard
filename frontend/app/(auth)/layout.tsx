@@ -1,12 +1,13 @@
-//frontend/app/(auth)/layout.tsx
+// frontend/app/(auth)/layout.tsx
 export default function AuthLayout({
-    children,
-  }: {
-    children: React.ReactNode
-  }) {
-    return (
-      <main className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
-        {children}
-      </main>
-    );
-  }
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    // Removido o padding e adicionado w-full h-full
+    <main className="min-h-screen w-full">
+      {children}
+    </main>
+  );
+}

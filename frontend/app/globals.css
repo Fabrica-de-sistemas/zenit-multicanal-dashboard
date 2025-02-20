@@ -67,6 +67,33 @@
     --ring: 217.2 32.6% 17.5%;
   }
 }
+
+/* Adicione isto ao seu globals.css */
+.bg-grid-white {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+}
+
+/* Efeito de Scroll Suave */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Efeito de Fade para Cards */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-animation {
+  animation: fadeIn 0.5s ease-out forwards;
+}
  
 @layer base {
   * {
