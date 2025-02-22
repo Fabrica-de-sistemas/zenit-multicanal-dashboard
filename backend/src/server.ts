@@ -15,6 +15,7 @@ import { permissionController } from './controllers/permissionController';
 import PermissionService from './services/PermissionService';
 import { Permission } from './config/permissions';
 import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 const app = express();
 const httpServer = createServer(app);
@@ -220,22 +221,48 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('sendMessage', async (messageData) => {
+    socket.on('sendMessage', async (data) => {
         try {
-            console.log('Nova mensagem do chat interno:', messageData);
+            console.log('Recebendo mensagem do chat interno:', data);
 
-            if (!messageData.content || !messageData.userId) {
-                throw new Error('Dados da mensagem inválidos');
+            // Validação mais detalhada
+            if (!data || typeof data !== 'object') {
+                throw new Error('Dados da mensagem inválidos - formato incorreto');
             }
 
-            // Usa o ChatService para mensagens internas
-            const newMessage = await chatService.addMessage(messageData);
-            io.emit('newMessage', newMessage);
-            console.log('Mensagem do chat interno enviada com sucesso');
+            if (!data.ticketId || !data.message) {
+                throw new Error('Dados da mensagem inválidos - campos obrigatórios ausentes');
+            }
+
+            const success = await whatsappService.sendMessage(data.ticketId, data.message);
+
+            if (success) {
+                // Adiciona a mensagem ao ticket
+                const ticket = whatsappService.addMessageToTicket(data.ticketId, {
+                    id: uuidv4(),
+                    content: data.message,
+                    platform: 'whatsapp',
+                    sender: {
+                        name: 'Atendente',
+                        username: 'operator',
+                        isOperator: true
+                    },
+                    timestamp: new Date().toISOString()
+                });
+
+                // Emite atualização do ticket
+                if (ticket) {
+                    io.emit('ticketUpdated', ticket);
+                }
+            } else {
+                socket.emit('messageError', {
+                    error: 'Falha ao enviar mensagem'
+                });
+            }
         } catch (error) {
             console.error('Erro ao processar mensagem do chat interno:', error);
             socket.emit('messageError', {
-                error: 'Não foi possível enviar a mensagem'
+                error: error instanceof Error ? error.message : 'Erro ao processar mensagem'
             });
         }
     });

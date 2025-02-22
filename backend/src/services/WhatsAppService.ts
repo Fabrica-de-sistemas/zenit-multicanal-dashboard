@@ -44,6 +44,24 @@ class WhatsAppService extends EventEmitter {
     this.initializeClient();
   }
 
+  public addMessageToTicket(ticketId: string, message: any): Ticket | null {
+
+    const ticket = this.tickets.get(ticketId);
+
+    if (ticket) {
+
+      ticket.messages.push(message);
+
+      this.tickets.set(ticketId, ticket);
+
+      return ticket;
+
+    }
+
+    return null;
+
+  }
+
   public static getInstance(): WhatsAppService {
     if (!WhatsAppService.instance) {
       WhatsAppService.instance = new WhatsAppService();
@@ -223,15 +241,20 @@ class WhatsAppService extends EventEmitter {
     }
   }
 
-  async getTicketWithMessages(ticketId: string) {
+  // Método auxiliar para buscar ticket com mensagens
+private async getTicketWithMessages(ticketId: string) {
+  try {
     const [ticketData] = await query(
-      `SELECT * FROM tickets WHERE id = ?`,
+      'SELECT * FROM tickets WHERE id = ?',
       [ticketId]
     );
 
     if (!ticketData) return null;
 
-    const messages = await query(chatQueries.getTicketMessages, [ticketId]);
+    const messages = await query(
+      'SELECT * FROM ticket_messages WHERE ticket_id = ? ORDER BY created_at ASC',
+      [ticketId]
+    );
 
     return {
       id: ticketData.id,
@@ -242,40 +265,74 @@ class WhatsAppService extends EventEmitter {
         sender: {
           name: msg.sender_name,
           username: msg.sender_username,
-          isOperator: msg.is_operator
+          isOperator: msg.is_operator === 1
         },
-        timestamp: msg.created_at
+        timestamp: msg.created_at,
+        platform: 'whatsapp'
       })),
       createdAt: ticketData.created_at,
       updatedAt: ticketData.updated_at
     };
+  } catch (error) {
+    console.error('Erro ao buscar ticket:', error);
+    return null;
   }
+}
 
   async sendMessage(to: string, message: string): Promise<boolean> {
     try {
       if (!this.isReady) return false;
-
+  
       const cleanNumber = to.replace('@c.us', '');
       const fullNumber = `${cleanNumber}@c.us`;
-
+  
+      // Primeiro, verifica se o ticket existe
+      const [existingTicket] = await query(
+        'SELECT * FROM tickets WHERE id = ?',
+        [fullNumber]
+      );
+  
+      // Se o ticket não existir, cria um novo
+      if (!existingTicket) {
+        await execute(
+          'INSERT INTO tickets (id, status) VALUES (?, ?)',
+          [fullNumber, 'open']
+        );
+      }
+  
+      // Envia a mensagem via WhatsApp
       await this.client.sendMessage(fullNumber, message);
-
-      // Salva a mensagem do operador no banco
+  
+      // Agora que garantimos que o ticket existe, salvamos a mensagem
       const messageId = uuidv4();
-      await execute(chatQueries.saveTicketMessage, [
-        messageId,
-        fullNumber,
-        message,
-        'Atendente',
-        'operator',
-        true
-      ]);
-
+      await execute(
+        `
+        INSERT INTO ticket_messages 
+        (id, ticket_id, content, sender_name, sender_username, is_operator)
+        VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        [
+          messageId,
+          fullNumber,
+          message,
+          'Atendente',
+          'operator',
+          true
+        ]
+      );
+  
+      // Atualiza o timestamp do ticket
+      await execute(
+        'UPDATE tickets SET updated_at = NOW() WHERE id = ?',
+        [fullNumber]
+      );
+  
+      // Busca o ticket atualizado para emitir o evento
       const ticket = await this.getTicketWithMessages(fullNumber);
       if (ticket) {
         this.emit('ticketUpdated', ticket);
       }
-
+  
       return true;
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);

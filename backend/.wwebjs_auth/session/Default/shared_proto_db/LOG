@@ -1,3 +1,2 @@
-2024/12/18-21:39:16.650 a407 Reusing MANIFEST /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/shared_proto_db/MANIFEST-000001
-2024/12/18-21:39:16.650 a407 Recovering log #3
-2024/12/18-21:39:16.651 a407 Reusing old log /Users/douglas/zenit/backend/.wwebjs_auth/session/Default/shared_proto_db/000003.log 
+2025/02/21-20:31:53.935 5424 Creating DB C:\Users\dougl\OneDrive\Área de Trabalho\Projetos\zenit-multicanal-dashboard\backend\.wwebjs_auth\session\Default\shared_proto_db since it was missing.
+2025/02/21-20:31:53.941 5424 Reusing MANIFEST C:\Users\dougl\OneDrive\Área de Trabalho\Projetos\zenit-multicanal-dashboard\backend\.wwebjs_auth\session\Default\shared_proto_db/MANIFEST-000001
