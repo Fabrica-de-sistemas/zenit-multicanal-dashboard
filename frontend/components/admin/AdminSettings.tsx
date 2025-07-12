@@ -6,6 +6,7 @@ import { adminService } from '@/services/adminService';
 import SectorPermissionsManager from './SectorPermissionsManager';
 import UserPermissionsManager from './UserPermissionManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Menu, X } from 'lucide-react';
 
 interface User {
   id: string;
@@ -16,6 +17,7 @@ interface User {
 }
 
 const AdminSettings = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('users');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -231,44 +233,60 @@ const AdminSettings = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
-          <div className="p-6">
+    <div className="flex flex-1 h-full"> {/* Garante que o container ocupe o espaço */}
+      {/* Botão para abrir o menu em telas pequenas */}
+      <button
+        onClick={() => setIsMenuOpen(true)}
+        className="md:hidden absolute top-4 right-4 z-20 p-2 bg-white rounded-full shadow-lg"
+      >
+        <Menu size={24} />
+      </button>
+
+      {/* Menu Lateral - Comportamento responsivo */}
+      <div className={`
+        w-full md:w-64 bg-white border-r border-gray-200 
+        transform transition-transform duration-300 ease-in-out
+        absolute md:static inset-y-0 left-0 z-10
+        ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0
+      `}>
+        {/* Cabeçalho do Menu com botão de fechar */}
+        <div className="flex justify-between items-center p-6">
+          <div>
             <h1 className="text-xl font-bold text-gray-800">Configurações</h1>
-            <p className="text-sm text-gray-500 mt-1">Painel Administrativo</p>
+            <p className="text-sm text-gray-500 mt-1">Painel Admin</p>
           </div>
-
-          <nav className="px-4 pb-4">
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'users'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <User size={20} />
-              <span>Usuários</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('permissions')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'permissions'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <Shield size={20} />
-              <span>Permissões</span>
-            </button>
-          </nav>
+          <button
+            onClick={() => setIsMenuOpen(false)}
+            className="md:hidden p-1"
+          >
+            <X size={24} />
+          </button>
         </div>
 
-        <div className="flex-1 p-8">
-          {activeTab === 'permissions' ? renderPermissionsTabs() : renderUsersList()}
-        </div>
+        {/* Navegação */}
+        <nav className="px-4 pb-4">
+          <button
+            onClick={() => { setActiveTab('users'); setIsMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium ...`}
+          >
+            <User size={20} />
+            <span>Usuários</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('permissions'); setIsMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium ...`}
+          >
+            <Shield size={20} />
+            <span>Permissões</span>
+          </button>
+        </nav>
+      </div>
+
+      {/* Conteúdo Principal */}
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        {activeTab === 'permissions' ? renderPermissionsTabs() : renderUsersList()}
       </div>
 
       {/* Modais */}
